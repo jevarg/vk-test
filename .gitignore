@@ -1,0 +1,4 @@
+.conan/
+build/
+shaders/*.spv
+CMakeUserPresets.json
