@@ -2,8 +2,8 @@
 
 #include <optional>
 #include <vector>
-#include <SDL_video.h>
 #include <set>
+#include <SDL_video.h>
 #include <vulkan/vulkan.h>
 
 struct QueueFamilyIndices {
@@ -45,7 +45,7 @@ private:
     VkDevice m_vkDevice = VK_NULL_HANDLE;
     VkPipelineLayout m_vkPipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
-    VkPipeline m_pipeline = VK_NULL_HANDLE;
+    VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
 
     VkQueue m_graphicsQueue = VK_NULL_HANDLE;
     VkQueue m_presentQueue = VK_NULL_HANDLE;
@@ -55,9 +55,15 @@ private:
     std::vector<VkImageView> m_swapChainImageViews;
     VkFormat m_swapChainImageFormat{};
     VkExtent2D m_swapChainExtent{};
+    std::vector<VkFramebuffer> m_framebuffers;
 
+    VkCommandPool m_commandPool = VK_NULL_HANDLE;
+    VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
 
-    void m_mainLoop();
+    VkSemaphore m_imageAvailableSemaphore = VK_NULL_HANDLE;
+    VkSemaphore m_renderFinishedSemaphore = VK_NULL_HANDLE;
+    VkFence m_inFlightFence = VK_NULL_HANDLE;
+
 
     // VK stuff
     [[nodiscard]]
@@ -65,7 +71,7 @@ private:
 
     void m_createVKInstance(SDL_Window *window);
     void m_createSurface(SDL_Window *window);
-    QueueFamilyIndices m_findQueueFamilies(VkPhysicalDevice device);
+    QueueFamilyIndices m_findQueueFamilies(VkPhysicalDevice device) const;
     bool m_checkDeviceExtensionSupport(VkPhysicalDevice device);
     SwapChainSupportDetails m_querySwapChainSupport(VkPhysicalDevice device);
     bool m_isDeviceSuitable(VkPhysicalDevice device);
@@ -76,11 +82,21 @@ private:
     VkPresentModeKHR m_chooseSurfacePresentMode(const std::vector<VkPresentModeKHR>& availableModes);
     VkExtent2D m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR &capabilities, SDL_Window *window);
     void m_createSwapChain(SDL_Window *window);
-    std::vector<VkImageView> m_createImageViews();
+    void m_createImageViews();
 
     void m_createRenderPass();
     void m_createGraphicsPipeline();
+    void m_createFramebuffers();
+
+    void m_createCommandPool();
+    void m_createCommandBuffer();
+    void m_createSyncObjects();
 
     void m_initVulkan(SDL_Window *window);
     void m_destroyVulkan();
+
+    void m_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+    void m_mainLoop();
+    void m_drawFrame();
 };

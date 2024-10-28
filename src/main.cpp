@@ -24,7 +24,7 @@ SDL_Window *InitSDL() {
         return nullptr;
     }
 
-    SDL_Window *window = SDL_CreateWindow("MammaVK", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_VULKAN);
+    SDL_Window *window = SDL_CreateWindow("VKTest", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_VULKAN);
     if (window == nullptr) {
         PrintSDLError();
         DestroySDL(window);
