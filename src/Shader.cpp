@@ -24,7 +24,7 @@ Shader::~Shader() {
     vkDestroyShaderModule(m_device, m_module, nullptr);
 }
 
-const VkShaderModule &Shader::getModule() const {
+const VkShaderModule& Shader::getModule() const {
     return m_module;
 }
 

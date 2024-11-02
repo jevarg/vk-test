@@ -36,9 +36,6 @@ public:
     void run(SDL_Window *window);
 
 private:
-    // const uint32_t WIDTH = 320;
-    // const uint32_t HEIGHT = 240;
-    // SDL_Window* m_window;
     VkInstance m_vkInstance = VK_NULL_HANDLE;
     VkSurfaceKHR m_vkSurface = VK_NULL_HANDLE;
     VkPhysicalDevice m_vkPhysicalDevice = VK_NULL_HANDLE;
@@ -58,11 +55,12 @@ private:
     std::vector<VkFramebuffer> m_framebuffers;
 
     VkCommandPool m_commandPool = VK_NULL_HANDLE;
-    VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+    std::vector<VkCommandBuffer> m_commandBuffers;
+    std::vector<VkSemaphore> m_imageAvailableSemaphores;
+    std::vector<VkSemaphore> m_renderFinishedSemaphores;
+    std::vector<VkFence> m_inFlightFences;
 
-    VkSemaphore m_imageAvailableSemaphore = VK_NULL_HANDLE;
-    VkSemaphore m_renderFinishedSemaphore = VK_NULL_HANDLE;
-    VkFence m_inFlightFence = VK_NULL_HANDLE;
+    uint32_t m_currentFrame = 0;
 
 
     // VK stuff
@@ -89,7 +87,7 @@ private:
     void m_createFramebuffers();
 
     void m_createCommandPool();
-    void m_createCommandBuffer();
+    void m_createCommandBuffers();
     void m_createSyncObjects();
 
     void m_initVulkan(SDL_Window *window);

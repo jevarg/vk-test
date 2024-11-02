@@ -45,8 +45,8 @@ int main(int, char **) {
         return EXIT_FAILURE;
     }
 
-    VK app;
     try {
+        VK app;
         app.run(window);
     } catch (const std::exception &e) {
         fmt::println(stderr, "App error: {}", e.what());

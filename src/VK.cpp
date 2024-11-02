@@ -12,6 +12,18 @@
 
 #include "Shader.h"
 
+constexpr int maxInflightFrames = 2;
+
+#define VK_CHECK(msg, res) handleVKError(msg, res, __FILE__, __LINE__)
+
+inline void handleVKError(const char *msg, const VkResult res, const char *file, const int line) {
+    if (res == VK_SUCCESS) {
+        return;
+    }
+
+    throw std::runtime_error(fmt::format("[{}:{}]: {} ({})", file, line, msg, string_VkResult(res)));
+}
+
 const std::vector requiredVKExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
@@ -29,16 +41,11 @@ bool VK::m_setupVVL(const std::vector<const char *> &requestedLayers) const {
     fmt::println("Setting up VVL");
 
     uint32_t layersCount = 0;
-    VkResult res = vkEnumerateInstanceLayerProperties(&layersCount, nullptr);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to count layer properties");
-    }
+    VK_CHECK("Failed to count layer properties", vkEnumerateInstanceLayerProperties(&layersCount, nullptr));
 
     std::vector<VkLayerProperties> availableLayers(layersCount);
-    res = vkEnumerateInstanceLayerProperties(&layersCount, availableLayers.data());
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to enumerate layer properties");
-    }
+    VK_CHECK("Failed to enumerate layer properties",
+             vkEnumerateInstanceLayerProperties(&layersCount, availableLayers.data()));
 
     for (const auto &requestedLayer: requestedLayers) {
         if (std::ranges::find_if(availableLayers, [&requestedLayer](const auto &availableLayer) {
@@ -62,14 +69,14 @@ void VK::m_createVKInstance(SDL_Window *window) {
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
     uint32_t extCount;
-    bool res = SDL_Vulkan_GetInstanceExtensions(window, &extCount, nullptr);
-    if (!res) {
+    bool success = SDL_Vulkan_GetInstanceExtensions(window, &extCount, nullptr);
+    if (!success) {
         throw std::runtime_error("Failed to get instance extensions count");
     }
 
     std::vector<const char *> instanceExtensions(extCount);
-    res = SDL_Vulkan_GetInstanceExtensions(window, &extCount, instanceExtensions.data());
-    if (!res) {
+    success = SDL_Vulkan_GetInstanceExtensions(window, &extCount, instanceExtensions.data());
+    if (!success) {
         throw std::runtime_error("Failed to get instance extensions names");
     }
 
@@ -96,9 +103,7 @@ void VK::m_createVKInstance(SDL_Window *window) {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (auto res = vkCreateInstance(&createInfo, nullptr, &m_vkInstance); res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("Failed to create vk instance ({})", string_VkResult(res)));
-    }
+    VK_CHECK("Failed to create vk instance", vkCreateInstance(&createInfo, nullptr, &m_vkInstance));
 }
 
 void VK::m_createSurface(SDL_Window *window) {
@@ -147,16 +152,12 @@ QueueFamilyIndices VK::m_findQueueFamilies(VkPhysicalDevice device) const {
 
 bool VK::m_checkDeviceExtensionSupport(const VkPhysicalDevice device) {
     uint32_t extensionCount = 0;
-    VkResult res = vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to count device extensions");
-    }
+    VK_CHECK("Failed to count device extensions",
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr));
 
     std::vector<VkExtensionProperties> supportedExtensions(extensionCount);
-    res = vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, supportedExtensions.data());
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to enumerate device extensions");
-    }
+    VK_CHECK("Failed to enumerate device extensions",
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, supportedExtensions.data()));
 
     for (const char *requiredExtension: requiredVKExtensions) {
         if (std::ranges::find_if(supportedExtensions.begin(), supportedExtensions.end(),
@@ -202,20 +203,16 @@ void VK::m_pickPhysicalDevice() {
     fmt::println("Picking a suitable device");
 
     uint32_t deviceCount = 0;
-    VkResult res = vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, nullptr);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to enumerate physical devices");
-    }
+    VK_CHECK("Failed to enumerate physical devices",
+        vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, nullptr));
 
     if (deviceCount == 0) {
         throw std::runtime_error("Failed to find GPUs with Vulkan support");
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    res = vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, devices.data());
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to enumerate physical devices");
-    }
+    VK_CHECK("Failed to enumerate physical devices",
+        vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, devices.data()));
 
     for (VkPhysicalDevice device: devices) {
         if (!m_isDeviceSuitable(device)) {
@@ -263,10 +260,8 @@ void VK::m_createLogicalDevice() {
     deviceCreateInfo.enabledExtensionCount = requiredVKExtensions.size();
     deviceCreateInfo.ppEnabledExtensionNames = requiredVKExtensions.data();
 
-    const VkResult res = vkCreateDevice(m_vkPhysicalDevice, &deviceCreateInfo, nullptr, &m_vkDevice);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("Failed to create vk logical device ({})", string_VkResult(res)));
-    }
+    VK_CHECK("Failed to create vk logical device",
+        vkCreateDevice(m_vkPhysicalDevice, &deviceCreateInfo, nullptr, &m_vkDevice));
 
     // We now get the newly created queues
     vkGetDeviceQueue(m_vkDevice, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
@@ -277,39 +272,27 @@ SwapChainSupportDetails VK::m_querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportDetails details;
 
     // Capabilities
-    VkResult res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_vkSurface, &details.capabilities);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to get surface capabilities");
-    }
+    VK_CHECK("Failed to get surface capabilities",
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_vkSurface, &details.capabilities));
 
     // Pixel formats
     uint32_t formatCount = 0;
-    res = vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_vkSurface, &formatCount, nullptr);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to count surface pixel formats");
-    }
+    VK_CHECK("Failed to count surface pixel formats",
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_vkSurface, &formatCount, nullptr));
     if (formatCount) {
         details.formats.resize(formatCount);
-        res = vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_vkSurface, &formatCount,
-                                                   details.formats.data());
-        if (res != VK_SUCCESS) {
-            throw std::runtime_error("Failed to get surface pixel formats");
-        }
+        VK_CHECK("Failed to get surface pixel formats",
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_vkSurface, &formatCount, details.formats.data()));
     }
 
     // Present modes
     uint32_t presentModeCount = 0;
-    res = vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_vkSurface, &presentModeCount, nullptr);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("Failed to count surface present modes");
-    }
+    VK_CHECK("Failed to count surface present modes",
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_vkSurface, &presentModeCount, nullptr));
     if (presentModeCount) {
         details.presentModes.resize(presentModeCount);
-        res = vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_vkSurface, &presentModeCount,
-                                                        details.presentModes.data());
-        if (res != VK_SUCCESS) {
-            throw std::runtime_error("Failed to get surface present modes");
-        }
+        VK_CHECK("Failed to get surface present modes",
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_vkSurface, &presentModeCount, details.presentModes.data()));
     }
 
     return details;
@@ -320,7 +303,7 @@ VkSurfaceFormatKHR VK::m_chooseSurfaceFormat(const std::vector<VkSurfaceFormatKH
         if (availableFormat.format == VK_FORMAT_B8G8R8_SRGB &&
             availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
-            }
+        }
     }
 
     return availableFormats[0];
@@ -394,24 +377,18 @@ void VK::m_createSwapChain(SDL_Window *window) {
         createInfo.pQueueFamilyIndices = familyIndices;
     }
 
-    VkResult res = vkCreateSwapchainKHR(m_vkDevice, &createInfo, nullptr, &m_vkSwapChain);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("Failed to create vk swap chain ({})", string_VkResult(res)));
-    }
+    VK_CHECK("Failed to create vk swap chain",
+        vkCreateSwapchainKHR(m_vkDevice, &createInfo, nullptr, &m_vkSwapChain));
 
     // Fetching swapChain images
     uint32_t imageCount = 0;
-    res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &imageCount, nullptr);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("Failed to count swap chain images ({})", string_VkResult(res)));
-    }
+    VK_CHECK("Failed to count swap chain images",
+        vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &imageCount, nullptr));
 
     m_swapChainImages.resize(imageCount);
 
-    res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &imageCount, m_swapChainImages.data());
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("Failed to get swap chain images ({})", string_VkResult(res)));
-    }
+    VK_CHECK("Failed to get swap chain images",
+        vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &imageCount, m_swapChainImages.data()));
 
     m_swapChainImageFormat = surfaceFormat.format;
     m_swapChainExtent = extent;
@@ -438,10 +415,8 @@ void VK::m_createImageViews() {
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        const VkResult res = vkCreateImageView(m_vkDevice, &createInfo, nullptr, &m_swapChainImageViews[i]);
-        if (res != VK_SUCCESS) {
-            throw std::runtime_error(fmt::format("Failed to create image view ({})", string_VkResult(res)));
-        }
+        VK_CHECK("Failed to create image view",
+            vkCreateImageView(m_vkDevice, &createInfo, nullptr, &m_swapChainImageViews[i]));
     }
 }
 
@@ -480,10 +455,8 @@ void VK::m_createRenderPass() {
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    const VkResult res = vkCreateRenderPass(m_vkDevice, &renderPassInfo, nullptr, &m_renderPass);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("Failed to create render pass! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("Failed to create render pass!",
+        vkCreateRenderPass(m_vkDevice, &renderPassInfo, nullptr, &m_renderPass));
 }
 
 void VK::m_createGraphicsPipeline() {
@@ -557,7 +530,8 @@ void VK::m_createGraphicsPipeline() {
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT
+                                          | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
@@ -569,10 +543,8 @@ void VK::m_createGraphicsPipeline() {
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
-    VkResult res = vkCreatePipelineLayout(m_vkDevice, &pipelineLayoutInfo, nullptr, &m_vkPipelineLayout);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("Failed to create pipeline layout! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("Failed to create pipeline layout!",
+        vkCreatePipelineLayout(m_vkDevice, &pipelineLayoutInfo, nullptr, &m_vkPipelineLayout));
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -590,10 +562,8 @@ void VK::m_createGraphicsPipeline() {
     pipelineInfo.renderPass = m_renderPass;
     pipelineInfo.subpass = 0;
 
-    res = vkCreateGraphicsPipelines(m_vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to create graphics pipeline! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("failed to create graphics pipeline!",
+        vkCreateGraphicsPipelines(m_vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline));
 }
 
 void VK::m_createFramebuffers() {
@@ -612,61 +582,57 @@ void VK::m_createFramebuffers() {
         framebufferInfo.height = m_swapChainExtent.height;
         framebufferInfo.layers = 1;
 
-        const VkResult& res = vkCreateFramebuffer(m_vkDevice, &framebufferInfo, nullptr, &m_framebuffers[i]);
-        if (res != VK_SUCCESS) {
-            throw std::runtime_error(fmt::format("unable to create framebuffer {} ({})", i, string_VkResult(res)));
-        }
+        VK_CHECK(fmt::format("unable to create framebuffer {}", i).c_str(),
+            vkCreateFramebuffer(m_vkDevice, &framebufferInfo, nullptr, &m_framebuffers[i]));
     }
 }
 
 void VK::m_createCommandPool() {
-    const QueueFamilyIndices& indices = m_findQueueFamilies(m_vkPhysicalDevice);
+    const QueueFamilyIndices &indices = m_findQueueFamilies(m_vkPhysicalDevice);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
 
-    const VkResult res = vkCreateCommandPool(m_vkDevice, &poolInfo, nullptr, &m_commandPool);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to create command pool! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("failed to create command pool!",
+        vkCreateCommandPool(m_vkDevice, &poolInfo, nullptr, &m_commandPool));
 }
 
-void VK::m_createCommandBuffer() {
+void VK::m_createCommandBuffers() {
+    m_commandBuffers.resize(maxInflightFrames);
+
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = m_commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = m_commandBuffers.size();
 
-    const VkResult res = vkAllocateCommandBuffers(m_vkDevice, &allocInfo, &m_commandBuffer);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to create command buffers! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("failed to create command buffers!",
+        vkAllocateCommandBuffers(m_vkDevice, &allocInfo, m_commandBuffers.data()));
 }
 
 void VK::m_createSyncObjects() {
+    m_imageAvailableSemaphores.resize(maxInflightFrames);
+    m_renderFinishedSemaphores.resize(maxInflightFrames);
+    m_inFlightFences.resize(maxInflightFrames);
+
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkResult res = vkCreateSemaphore(m_vkDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to create semaphore ({})", string_VkResult(res)));
-    }
-
-    res = vkCreateSemaphore(m_vkDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to create semaphore ({})", string_VkResult(res)));
-    }
 
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    res = vkCreateFence(m_vkDevice, &fenceInfo, nullptr, &m_inFlightFence);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to create fence ({})", string_VkResult(res)));
+    for (int i = 0; i < maxInflightFrames; ++i) {
+        VK_CHECK("failed to create semaphore",
+            vkCreateSemaphore(m_vkDevice, &semaphoreInfo, nullptr, m_imageAvailableSemaphores.data()));
+
+        VK_CHECK("failed to create semaphore",
+            vkCreateSemaphore(m_vkDevice, &semaphoreInfo, nullptr, m_renderFinishedSemaphores.data()));
+
+        VK_CHECK("failed to create fence",
+            vkCreateFence(m_vkDevice, &fenceInfo, nullptr, m_inFlightFences.data()));
     }
 }
 
@@ -674,10 +640,7 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    VkResult res = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to begin recording command buffer! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("failed to begin recording command buffer!", vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -696,10 +659,7 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
     vkCmdEndRenderPass(commandBuffer);
 
-    res = vkEndCommandBuffer(commandBuffer);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to record command buffer! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));
 }
 
 void VK::m_initVulkan(SDL_Window *window) {
@@ -715,28 +675,23 @@ void VK::m_initVulkan(SDL_Window *window) {
     m_createGraphicsPipeline();
     m_createFramebuffers();
     m_createCommandPool();
-    m_createCommandBuffer();
+    m_createCommandBuffers();
     m_createSyncObjects();
 
     fmt::println("Good to go :)");
 }
 
 void VK::m_destroyVulkan() {
-    vkDestroySemaphore(m_vkDevice, m_imageAvailableSemaphore, nullptr);
-    m_imageAvailableSemaphore = VK_NULL_HANDLE;
-
-    vkDestroySemaphore(m_vkDevice, m_renderFinishedSemaphore, nullptr);
-    m_renderFinishedSemaphore = VK_NULL_HANDLE;
-
-    vkDestroyFence(m_vkDevice, m_inFlightFence, nullptr);
-    m_inFlightFence = VK_NULL_HANDLE;
-
-    // vkFreeCommandBuffers(m_vkDevice, m_commandPool, 1, &m_commandBuffer);
+    for (int i = 0; i < maxInflightFrames; ++i) {
+        vkDestroySemaphore(m_vkDevice, m_imageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(m_vkDevice, m_renderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(m_vkDevice, m_inFlightFences[i], nullptr);
+    }
 
     vkDestroyCommandPool(m_vkDevice, m_commandPool, nullptr);
     m_commandPool = VK_NULL_HANDLE;
 
-    for (const VkFramebuffer& framebuffer: m_framebuffers) {
+    for (const VkFramebuffer &framebuffer: m_framebuffers) {
         vkDestroyFramebuffer(m_vkDevice, framebuffer, nullptr);
     }
     m_framebuffers.clear();
@@ -779,7 +734,7 @@ void VK::m_mainLoop() {
                 (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_ESCAPE)) {
                 shouldClose = false;
                 break;
-                }
+            }
         }
 
         m_drawFrame();
@@ -790,34 +745,34 @@ void VK::m_mainLoop() {
 }
 
 void VK::m_drawFrame() {
-    vkWaitForFences(m_vkDevice, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(m_vkDevice, 1, &m_inFlightFence);
+    vkWaitForFences(m_vkDevice, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(m_vkDevice, 1, &m_inFlightFences[m_currentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_vkDevice, m_vkSwapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(m_vkDevice, m_vkSwapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame],
+                          VK_NULL_HANDLE, &imageIndex);
 
-    vkResetCommandBuffer(m_commandBuffer, 0);
-    m_recordCommandBuffer(m_commandBuffer, imageIndex);
+    vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
+    m_recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    const VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphore};
+    const VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
     const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_commandBuffer;
+    submitInfo.pCommandBuffers = &m_commandBuffers[m_currentFrame];
 
-    const VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphore};
+    const VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    VkResult res = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to submit draw command buffer! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("failed to submit draw command buffer!",
+        vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]));
+
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -829,8 +784,7 @@ void VK::m_drawFrame() {
     presentInfo.pSwapchains = swapChains;
     presentInfo.pImageIndices = &imageIndex;
 
-    res = vkQueuePresentKHR(m_presentQueue, &presentInfo);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error(fmt::format("failed to present queue! ({})", string_VkResult(res)));
-    }
+    VK_CHECK("failed to present queue!", vkQueuePresentKHR(m_presentQueue, &presentInfo));
+
+    m_currentFrame = m_currentFrame % maxInflightFrames;
 }
