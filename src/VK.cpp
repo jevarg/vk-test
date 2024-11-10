@@ -626,13 +626,13 @@ void VK::m_createSyncObjects() {
 
     for (int i = 0; i < maxInflightFrames; ++i) {
         VK_CHECK("failed to create semaphore",
-            vkCreateSemaphore(m_vkDevice, &semaphoreInfo, nullptr, m_imageAvailableSemaphores.data()));
+            vkCreateSemaphore(m_vkDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]));
 
         VK_CHECK("failed to create semaphore",
-            vkCreateSemaphore(m_vkDevice, &semaphoreInfo, nullptr, m_renderFinishedSemaphores.data()));
+            vkCreateSemaphore(m_vkDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]));
 
         VK_CHECK("failed to create fence",
-            vkCreateFence(m_vkDevice, &fenceInfo, nullptr, m_inFlightFences.data()));
+            vkCreateFence(m_vkDevice, &fenceInfo, nullptr, &m_inFlightFences[i]));
     }
 }
 
