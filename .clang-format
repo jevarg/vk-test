@@ -7,3 +7,5 @@ ColumnLimit: 120
 IndentWidth: 4
 SeparateDefinitionBlocks: Always
 AllowShortFunctionsOnASingleLine: None
+Cpp11BracedListStyle: false
+BreakAfterAttributes: Always

@@ -20,6 +20,7 @@ add_executable(VKTest
         src/Buffer.h
         src/Buffer.cpp
         src/vkutil.h
+        src/types/UniformBufferObject.h
 )
 
 target_include_directories(VKTest PRIVATE

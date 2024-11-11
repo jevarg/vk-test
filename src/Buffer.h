@@ -3,8 +3,8 @@
 
 class Buffer {
    public:
-    explicit Buffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, VkDeviceSize size,
-                    VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    Buffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage,
+           VkMemoryPropertyFlags properties);
 
    private:
     const VkDevice& m_device;
@@ -18,7 +18,7 @@ class Buffer {
     [[nodiscard]] const VkBuffer& buffer() const;
     [[nodiscard]] const VkDeviceMemory& getMemory() const;
 
-    void copyTo(const Buffer& dst, const VkCommandBuffer& commandBuffer);
+    void copyTo(const Buffer& dst, const VkCommandPool& commandPool, const VkQueue& queue) const;
 
    private:
     VkBuffer m_buffer = VK_NULL_HANDLE;

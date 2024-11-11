@@ -15,12 +15,14 @@ struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
 
-    [[nodiscard]] bool isValid() const {
+    [[nodiscard]]
+    bool isValid() const {
         return graphicsFamily.has_value() && presentFamily.has_value();
     }
 
-    [[nodiscard]] std::set<uint32_t> getUnique() const {
-        return {graphicsFamily.value(), presentFamily.value()};
+    [[nodiscard]]
+    std::set<uint32_t> getUnique() const {
+        return { graphicsFamily.value(), presentFamily.value() };
     }
 };
 
@@ -38,18 +40,19 @@ class VK {
    private:
     SDL_Window* m_window = nullptr;
 
-    VkInstance m_vkInstance = VK_NULL_HANDLE;
-    VkSurfaceKHR m_vkSurface = VK_NULL_HANDLE;
-    VkPhysicalDevice m_vkPhysicalDevice = VK_NULL_HANDLE;
-    VkDevice m_vkDevice = VK_NULL_HANDLE;
-    VkPipelineLayout m_vkPipelineLayout = VK_NULL_HANDLE;
+    VkInstance m_instance = VK_NULL_HANDLE;
+    VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+    VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+    VkDevice m_device = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
+    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
     VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
 
     VkQueue m_graphicsQueue = VK_NULL_HANDLE;
     VkQueue m_presentQueue = VK_NULL_HANDLE;
 
-    VkSwapchainKHR m_vkSwapChain = VK_NULL_HANDLE;
+    VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
     std::vector<VkImage> m_swapChainImages;
     std::vector<VkImageView> m_swapChainImageViews;
     VkFormat m_swapChainImageFormat{};
@@ -64,11 +67,21 @@ class VK {
     uint32_t m_currentFrame = 0;
 
     Triangle m_triangle;
-    std::unique_ptr<Buffer> m_buffer;
-    std::unique_ptr<Buffer> m_stagingBuffer;
+    std::unique_ptr<Buffer> m_vertexBuffer;
+    std::unique_ptr<Buffer> m_indexBuffer;
+
+    std::vector<std::unique_ptr<Buffer>> m_uniformBuffers;
+    std::vector<void*> m_uniformBuffersMapped;
+    VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> m_descriptorSets;
+
+    void m_mainLoop();
+    void m_drawFrame();
+    void m_updateUniformBuffer(uint32_t imageIndex);
 
     // VK stuff
-    [[nodiscard]] bool m_setupVVL(const std::vector<const char*>& requestedLayers) const;
+    [[nodiscard]]
+    bool m_setupVVL(const std::vector<const char*>& requestedLayers) const;
 
     void m_createVKInstance();
     void m_createSurface();
@@ -81,7 +94,8 @@ class VK {
 
     VkSurfaceFormatKHR m_chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR m_chooseSurfacePresentMode(const std::vector<VkPresentModeKHR>& availableModes);
-    [[nodiscard]] VkExtent2D m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
+    [[nodiscard]]
+    VkExtent2D m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
     void m_createSwapChain();
     void m_destroySwapChain() const;
@@ -89,6 +103,7 @@ class VK {
     void m_createImageViews();
 
     void m_createRenderPass();
+    void m_createDescriptorSetLayout();
     void m_createGraphicsPipeline();
     void m_createFramebuffers();
 
@@ -96,14 +111,14 @@ class VK {
     void m_createCommandBuffers();
     void m_createSyncObjects();
 
-    [[nodiscard]] uint32_t m_findMemoryType(uint32_t type, VkMemoryPropertyFlags properties) const;
     void m_createVertexBuffer();
-
-    void m_initVulkan();
-    void m_destroyVulkan() const;
+    void m_createIndexBuffer();
+    void m_createUniformBuffers();
+    void m_createDescriptorPool();
+    void m_createDescriptorSets();
 
     void m_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
 
-    void m_mainLoop();
-    void m_drawFrame();
+    void m_initVulkan();
+    void m_destroyVulkan() const;
 };
