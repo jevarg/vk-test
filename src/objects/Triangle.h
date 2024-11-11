@@ -10,7 +10,6 @@ class Triangle {
         {{-0.5f, 1.0f}, {0.0f, 0.1f, 1.0f}}
     };
 
-
 public:
     [[nodiscard]]
     size_t getByteSize() const;

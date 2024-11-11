@@ -17,6 +17,9 @@ add_executable(VKTest
         src/types/Vertex.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
+        src/Buffer.h
+        src/Buffer.cpp
+        src/vkutil.h
 )
 
 target_include_directories(VKTest PRIVATE

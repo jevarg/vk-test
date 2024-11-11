@@ -3,7 +3,7 @@
 #include <fstream>
 #include <fmt/format.h>
 
-Shader::Shader(const VkDevice &device, const char *path): m_device(device) {
+Shader::Shader(const VkDevice& device, const char* path): m_device(device) {
     fmt::println("Creating shader module from {}", path);
     std::ifstream file(path, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
@@ -32,7 +32,7 @@ void Shader::m_createModule() {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = m_bytecode.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t *>(m_bytecode.data());
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(m_bytecode.data());
 
     if (vkCreateShaderModule(m_device, &createInfo, nullptr, &m_module) != VK_SUCCESS) {
         throw std::runtime_error("Unable to create shader module");

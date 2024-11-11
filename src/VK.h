@@ -1,29 +1,26 @@
 #pragma once
 
-#include <optional>
-#include <vector>
-#include <set>
 #include <SDL_video.h>
 #include <vulkan/vulkan.h>
 
+#include <memory>
+#include <optional>
+#include <set>
+#include <vector>
+
+#include "Buffer.h"
 #include "objects/Triangle.h"
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
 
-    [[nodiscard]]
-    bool isValid() const {
-        return graphicsFamily.has_value() &&
-               presentFamily.has_value();
+    [[nodiscard]] bool isValid() const {
+        return graphicsFamily.has_value() && presentFamily.has_value();
     }
 
-    [[nodiscard]]
-    std::set<uint32_t> getUnique() const {
-        return {
-            graphicsFamily.value(),
-            presentFamily.value()
-        };
+    [[nodiscard]] std::set<uint32_t> getUnique() const {
+        return {graphicsFamily.value(), presentFamily.value()};
     }
 };
 
@@ -34,11 +31,11 @@ struct SwapChainSupportDetails {
 };
 
 class VK {
-public:
+   public:
     explicit VK(SDL_Window* window);
     void run();
 
-private:
+   private:
     SDL_Window* m_window = nullptr;
 
     VkInstance m_vkInstance = VK_NULL_HANDLE;
@@ -67,13 +64,11 @@ private:
     uint32_t m_currentFrame = 0;
 
     Triangle m_triangle;
-    VkBuffer m_vertexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory m_vertexBufferMemory = VK_NULL_HANDLE;
-
+    std::unique_ptr<Buffer> m_buffer;
+    std::unique_ptr<Buffer> m_stagingBuffer;
 
     // VK stuff
-    [[nodiscard]]
-    bool m_setupVVL(const std::vector<const char *> &requestedLayers) const;
+    [[nodiscard]] bool m_setupVVL(const std::vector<const char*>& requestedLayers) const;
 
     void m_createVKInstance();
     void m_createSurface();
@@ -86,8 +81,7 @@ private:
 
     VkSurfaceFormatKHR m_chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR m_chooseSurfacePresentMode(const std::vector<VkPresentModeKHR>& availableModes);
-    [[nodiscard]]
-    VkExtent2D m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR &capabilities) const;
+    [[nodiscard]] VkExtent2D m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
     void m_createSwapChain();
     void m_destroySwapChain() const;
@@ -102,8 +96,7 @@ private:
     void m_createCommandBuffers();
     void m_createSyncObjects();
 
-    [[nodiscard]]
-    uint32_t m_findMemoryType(uint32_t type, VkMemoryPropertyFlags properties) const;
+    [[nodiscard]] uint32_t m_findMemoryType(uint32_t type, VkMemoryPropertyFlags properties) const;
     void m_createVertexBuffer();
 
     void m_initVulkan();

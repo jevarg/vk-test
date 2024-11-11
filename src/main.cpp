@@ -9,7 +9,7 @@ void PrintSDLError() {
     fmt::println(stderr, "Error: {}", SDL_GetError());
 }
 
-void DestroySDL(SDL_Window *window) {
+void DestroySDL(SDL_Window* window) {
     if (window != nullptr) {
         SDL_DestroyWindow(window);
     }
@@ -18,13 +18,14 @@ void DestroySDL(SDL_Window *window) {
     fmt::println("SDL Destroyed");
 }
 
-SDL_Window *InitSDL() {
+SDL_Window* InitSDL() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         PrintSDLError();
         return nullptr;
     }
 
-    SDL_Window *window = SDL_CreateWindow("VKTest", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+    SDL_Window* window = SDL_CreateWindow("VKTest", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
+                                          SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
     if (window == nullptr) {
         PrintSDLError();
         DestroySDL(window);
@@ -35,12 +36,12 @@ SDL_Window *InitSDL() {
     return window;
 }
 
-int main(int, char **) {
-#ifndef NDEBUG
+int main(int, char**) {
+    #ifndef NDEBUG
     fmt::println("=== THIS IS A DEBUG BUILD ===");
-#endif
+    #endif
 
-    SDL_Window *window = InitSDL();
+    SDL_Window* window = InitSDL();
     if (window == nullptr) {
         return EXIT_FAILURE;
     }
@@ -48,7 +49,7 @@ int main(int, char **) {
     try {
         VK app(window);
         app.run();
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         fmt::println(stderr, "App error: {}", e.what());
     }
 
