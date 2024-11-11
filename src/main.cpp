@@ -24,7 +24,7 @@ SDL_Window *InitSDL() {
         return nullptr;
     }
 
-    SDL_Window *window = SDL_CreateWindow("VKTest", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_VULKAN);
+    SDL_Window *window = SDL_CreateWindow("VKTest", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
     if (window == nullptr) {
         PrintSDLError();
         DestroySDL(window);
@@ -46,8 +46,8 @@ int main(int, char **) {
     }
 
     try {
-        VK app;
-        app.run(window);
+        VK app(window);
+        app.run();
     } catch (const std::exception &e) {
         fmt::println(stderr, "App error: {}", e.what());
     }

@@ -14,8 +14,14 @@ add_executable(VKTest
         src/VK.h
         src/Shader.cpp
         src/Shader.h
+        src/types/Vertex.h
+        src/objects/Triangle.h
+        src/objects/Triangle.cpp
 )
 
+target_include_directories(VKTest PRIVATE
+        src
+)
 target_link_libraries(VKTest PRIVATE
         fmt::fmt
         SDL2::SDL2

@@ -6,6 +6,8 @@
 #include <SDL_video.h>
 #include <vulkan/vulkan.h>
 
+#include "objects/Triangle.h"
+
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
@@ -33,9 +35,12 @@ struct SwapChainSupportDetails {
 
 class VK {
 public:
-    void run(SDL_Window *window);
+    explicit VK(SDL_Window* window);
+    void run();
 
 private:
+    SDL_Window* m_window = nullptr;
+
     VkInstance m_vkInstance = VK_NULL_HANDLE;
     VkSurfaceKHR m_vkSurface = VK_NULL_HANDLE;
     VkPhysicalDevice m_vkPhysicalDevice = VK_NULL_HANDLE;
@@ -59,16 +64,19 @@ private:
     std::vector<VkSemaphore> m_imageAvailableSemaphores;
     std::vector<VkSemaphore> m_renderFinishedSemaphores;
     std::vector<VkFence> m_inFlightFences;
-
     uint32_t m_currentFrame = 0;
+
+    Triangle m_triangle;
+    VkBuffer m_vertexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory m_vertexBufferMemory = VK_NULL_HANDLE;
 
 
     // VK stuff
     [[nodiscard]]
     bool m_setupVVL(const std::vector<const char *> &requestedLayers) const;
 
-    void m_createVKInstance(SDL_Window *window);
-    void m_createSurface(SDL_Window *window);
+    void m_createVKInstance();
+    void m_createSurface();
     QueueFamilyIndices m_findQueueFamilies(VkPhysicalDevice device) const;
     bool m_checkDeviceExtensionSupport(VkPhysicalDevice device);
     SwapChainSupportDetails m_querySwapChainSupport(VkPhysicalDevice device);
@@ -78,8 +86,12 @@ private:
 
     VkSurfaceFormatKHR m_chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR m_chooseSurfacePresentMode(const std::vector<VkPresentModeKHR>& availableModes);
-    VkExtent2D m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR &capabilities, SDL_Window *window);
-    void m_createSwapChain(SDL_Window *window);
+    [[nodiscard]]
+    VkExtent2D m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR &capabilities) const;
+
+    void m_createSwapChain();
+    void m_destroySwapChain() const;
+    void m_recreateSwapChain();
     void m_createImageViews();
 
     void m_createRenderPass();
@@ -90,10 +102,14 @@ private:
     void m_createCommandBuffers();
     void m_createSyncObjects();
 
-    void m_initVulkan(SDL_Window *window);
-    void m_destroyVulkan();
+    [[nodiscard]]
+    uint32_t m_findMemoryType(uint32_t type, VkMemoryPropertyFlags properties) const;
+    void m_createVertexBuffer();
 
-    void m_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void m_initVulkan();
+    void m_destroyVulkan() const;
+
+    void m_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
 
     void m_mainLoop();
     void m_drawFrame();
