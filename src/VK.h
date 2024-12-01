@@ -67,6 +67,8 @@ class VK {
     uint32_t m_currentFrame = 0;
 
     Triangle m_triangle;
+    std::unique_ptr<Texture> m_texture;
+    VkSampler m_sampler = VK_NULL_HANDLE;
     std::unique_ptr<Buffer> m_vertexBuffer;
     std::unique_ptr<Buffer> m_indexBuffer;
 
@@ -111,6 +113,7 @@ class VK {
     void m_createCommandBuffers();
     void m_createSyncObjects();
 
+    void m_createSampler();
     void m_createVertexBuffer();
     void m_createIndexBuffer();
     void m_createUniformBuffers();

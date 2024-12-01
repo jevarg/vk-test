@@ -1,10 +1,11 @@
 #include "Buffer.h"
 
+#include "OneTimeCommand.h"
 #include "vkutil.h"
 
 Buffer::Buffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkDeviceSize size,
                const VkBufferUsageFlags usage, const VkMemoryPropertyFlags properties)
-    : m_device(device), m_physicalDevice(physicalDevice), m_size(size) {
+    : m_device(device), m_size(size) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = m_size;
@@ -43,36 +44,32 @@ const VkDeviceMemory& Buffer::getMemory() const {
     return m_bufferMemory;
 }
 
+void Buffer::setMemory(const void* src, const VkDeviceSize offset, const VkMemoryMapFlags flags) const {
+    void* data;
+
+    vkMapMemory(m_device, m_bufferMemory, offset, m_size, flags, &data);
+    memcpy(data, src, m_size);
+    vkUnmapMemory(m_device, m_bufferMemory);
+}
+
 void Buffer::copyTo(const Buffer& dst, const VkCommandPool& commandPool, const VkQueue& queue) const {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = commandPool;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    VK_CHECK("failed to allocate command buffer", vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer));
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    VK_CHECK("begin command buffer error", vkBeginCommandBuffer(commandBuffer, &beginInfo));
+    OneTimeCommand cmd(m_device, commandPool, queue);
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
     copyRegion.dstOffset = 0;
     copyRegion.size = m_size;
-    vkCmdCopyBuffer(commandBuffer, m_buffer, dst.buffer(), 1, &copyRegion);
 
-    VK_CHECK("end command buffer error", vkEndCommandBuffer(commandBuffer));
+    vkCmdCopyBuffer(cmd.buffer, m_buffer, dst.buffer(), 1, &copyRegion);
+}
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
+void Buffer::copyTo(const Texture& texture, VkCommandPool const& commandPool, VkQueue const& queue) const {
+    OneTimeCommand cmd(m_device, commandPool, queue);
 
-    VK_CHECK("failed to submit queue", vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
-    VK_CHECK("failed to wait on graphics queue", vkQueueWaitIdle(queue));
+    VkBufferImageCopy region{};
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent = texture.getExtent();
 
-    vkFreeCommandBuffers(m_device, commandPool, 1, &commandBuffer);
+    vkCmdCopyBufferToImage(cmd.buffer, m_buffer, texture.getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 }

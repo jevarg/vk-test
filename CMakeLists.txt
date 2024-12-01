@@ -10,21 +10,28 @@ find_package(Vulkan REQUIRED)
 
 add_executable(VKTest
         src/main.cpp
-        src/VK.cpp
-        src/VK.h
+        src/Buffer.cpp
+        src/Buffer.h
+        src/OneTimeCommand.cpp
+        src/OneTimeCommand.h
         src/Shader.cpp
         src/Shader.h
+        src/Texture.cpp
+        src/Texture.h
+        src/VK.cpp
+        src/VK.h
+        src/vkutil.h
+
         src/types/Vertex.h
+        src/types/UniformBufferObject.h
+
         src/objects/Triangle.h
         src/objects/Triangle.cpp
-        src/Buffer.h
-        src/Buffer.cpp
-        src/vkutil.h
-        src/types/UniformBufferObject.h
 )
 
 target_include_directories(VKTest PRIVATE
         src
+        external/include
 )
 target_link_libraries(VKTest PRIVATE
         fmt::fmt
