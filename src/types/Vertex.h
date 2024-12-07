@@ -1,11 +1,15 @@
 #pragma once
 
-#include <array>
-#include <glm/glm.hpp>
 #include <vulkan/vulkan_core.h>
 
+#include <array>
+
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 struct Vertex {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoord;
 
@@ -22,7 +26,7 @@ struct Vertex {
         std::array<VkVertexInputAttributeDescription, 3> attrDescriptions{};
         attrDescriptions[0].binding = 0;
         attrDescriptions[0].location = 0;
-        attrDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attrDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attrDescriptions[0].offset = offsetof(Vertex, pos);
 
         attrDescriptions[1].binding = 0;

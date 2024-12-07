@@ -1,7 +1,7 @@
-#include <vector>
-
 #include <SDL2/SDL.h>
 #include <fmt/base.h>
+
+#include <vector>
 
 #include "VK.h"
 
@@ -37,11 +37,15 @@ SDL_Window* InitSDL() {
 }
 
 int main(int, char**) {
-    #ifndef NDEBUG
+#ifndef NDEBUG
     fmt::println("=== THIS IS A DEBUG BUILD ===");
-    #endif
+#endif
 
     SDL_Window* window = InitSDL();
+    int* s = 0;
+    uint8_t* ss = 0;
+    uint_fast8_t* ssdf = 0;
+    int* sh = 0;
     if (window == nullptr) {
         return EXIT_FAILURE;
     }

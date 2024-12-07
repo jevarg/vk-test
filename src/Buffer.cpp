@@ -64,12 +64,13 @@ void Buffer::copyTo(const Buffer& dst, const VkCommandPool& commandPool, const V
 }
 
 void Buffer::copyTo(const Texture& texture, VkCommandPool const& commandPool, VkQueue const& queue) const {
-    OneTimeCommand cmd(m_device, commandPool, queue);
+    const OneTimeCommand cmd(m_device, commandPool, queue);
 
     VkBufferImageCopy region{};
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.layerCount = 1;
-    region.imageExtent = texture.getExtent();
+    region.imageExtent = texture.getImage().getExtent();
 
-    vkCmdCopyBufferToImage(cmd.buffer, m_buffer, texture.getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vkCmdCopyBufferToImage(cmd.buffer, m_buffer, texture.getImage().getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                           &region);
 }

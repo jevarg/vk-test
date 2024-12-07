@@ -277,10 +277,8 @@ bool VK::m_isDeviceSuitable(VkPhysicalDevice device) {
     // Later on, we can implement a simple device score system
     // e.g.:
     // https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/03_Physical_devices_and_queue_families.html#_base_device_suitability_checks
-    bool isSuitable = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-                      features.geometryShader &&
-                      features.samplerAnisotropy &&
-                      m_checkDeviceExtensionSupport(device);
+    bool isSuitable = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && features.geometryShader &&
+                      features.samplerAnisotropy && m_checkDeviceExtensionSupport(device);
 
     if (isSuitable) {
         const QueueFamilyIndices queueFamilyIndices = m_findQueueFamilies(device);
@@ -582,9 +580,9 @@ void VK::m_createDescriptorSetLayout() {
     samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
-        uboLayoutBinding,
-        samplerLayoutBinding
+    const std::array bindings = {
+        uboLayoutBinding,      //
+        samplerLayoutBinding,  //
     };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -612,7 +610,10 @@ void VK::m_createGraphicsPipeline() {
     fragShaderStageInfo.module = fragShader.getModule();
     fragShaderStageInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+    VkPipelineShaderStageCreateInfo shaderStages[] = {
+        vertShaderStageInfo,  //
+        fragShaderStageInfo,  //
+    };
 
     VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
     std::array attributeDescriptions = Vertex::getAttributeDescriptions();
@@ -865,8 +866,8 @@ void VK::m_createDescriptorSets() {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.sampler = m_sampler;
-        imageInfo.imageLayout = m_texture->getLayout();
-        imageInfo.imageView = m_texture->getImageView();
+        imageInfo.imageLayout = m_texture->getImage().getLayout();
+        imageInfo.imageView = m_texture->getImage().getImageView();
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -935,7 +936,12 @@ void VK::m_initVulkan() {
     m_createUniformBuffers();
     m_createCommandPool();
 
-    m_texture = std::make_unique<Texture>(m_device, m_physicalDevice, m_commandPool, m_graphicsQueue, "./assets/souley.png");
+    m_texture = std::make_unique<Texture>(m_device,              //
+                                          m_physicalDevice,      //
+                                          m_commandPool,         //
+                                          m_graphicsQueue,       //
+                                          "./assets/souley.png"  //
+    );
     m_createSampler();
 
     m_createDescriptorSetLayout();
@@ -1012,6 +1018,5 @@ void VK::m_createSampler() {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    VK_CHECK("failed to create sampler",
-             vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler));
+    VK_CHECK("failed to create sampler", vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler));
 }

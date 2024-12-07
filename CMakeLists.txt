@@ -10,8 +10,12 @@ find_package(Vulkan REQUIRED)
 
 add_executable(VKTest
         src/main.cpp
+        src/vkutil.h
+
         src/Buffer.cpp
         src/Buffer.h
+        src/Image.cpp
+        src/Image.h
         src/OneTimeCommand.cpp
         src/OneTimeCommand.h
         src/Shader.cpp
@@ -20,7 +24,6 @@ add_executable(VKTest
         src/Texture.h
         src/VK.cpp
         src/VK.h
-        src/vkutil.h
 
         src/types/Vertex.h
         src/types/UniformBufferObject.h
