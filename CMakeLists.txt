@@ -14,6 +14,8 @@ add_executable(VKTest
 
         src/Buffer.cpp
         src/Buffer.h
+        src/DepthImage.cpp
+        src/DepthImage.h
         src/Image.cpp
         src/Image.h
         src/OneTimeCommand.cpp
@@ -28,8 +30,12 @@ add_executable(VKTest
         src/types/Vertex.h
         src/types/UniformBufferObject.h
 
+        src/objects/Model.cpp
+        src/objects/Model.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
+
+        external/include/tiny_obj_loader.h
 )
 
 target_include_directories(VKTest PRIVATE

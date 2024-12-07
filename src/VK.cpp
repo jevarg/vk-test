@@ -440,7 +440,6 @@ void VK::m_createSwapChain() {
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface = m_surface;
     createInfo.minImageCount = swapChainDetails.capabilities.minImageCount + 1;
-    ;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
     createInfo.imageExtent = extent;
@@ -500,6 +499,10 @@ void VK::m_recreateSwapChain() {
 
     m_createSwapChain();
     m_createImageViews();
+
+    m_depthImage->destroy();
+    m_createDepthResources();
+
     m_createFramebuffers();
 }
 
@@ -530,6 +533,7 @@ void VK::m_createImageViews() {
 }
 
 void VK::m_createRenderPass() {
+    // Color attachment
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = m_swapChainImageFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -544,21 +548,41 @@ void VK::m_createRenderPass() {
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    // Depth attachment
+    VkAttachmentDescription depthAttachment{};
+    depthAttachment.format = VK_FORMAT_D32_SFLOAT;  // TODO: findDepthFormat();
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depthAttachmentRef{};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependency.dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    const std::array attachments = { colorAttachment, depthAttachment };
 
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.attachmentCount = attachments.size();
+    renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 1;
@@ -688,6 +712,12 @@ void VK::m_createGraphicsPipeline() {
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
 
+    VkPipelineDepthStencilStateCreateInfo depthStencil{};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
@@ -707,6 +737,7 @@ void VK::m_createGraphicsPipeline() {
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pDepthStencilState = nullptr;
     pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDepthStencilState = &depthStencil;
     // pipelineInfo.pDynamicState = &dynamicStateInfo;
     pipelineInfo.layout = m_pipelineLayout;
     pipelineInfo.renderPass = m_renderPass;
@@ -719,13 +750,13 @@ void VK::m_createGraphicsPipeline() {
 void VK::m_createFramebuffers() {
     m_framebuffers.resize(m_swapChainImageViews.size());
     for (int i = 0; i < m_swapChainImageViews.size(); ++i) {
-        const VkImageView attachments[] = { m_swapChainImageViews[i] };
+        const std::array attachments = { m_swapChainImageViews[i], m_depthImage->getImageView() };
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = m_renderPass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.attachmentCount = attachments.size();
+        framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = m_swapChainExtent.width;
         framebufferInfo.height = m_swapChainExtent.height;
         framebufferInfo.layers = 1;
@@ -782,36 +813,14 @@ void VK::m_createSyncObjects() {
     }
 }
 
-void VK::m_createVertexBuffer() {
-    const size_t bufferSize = m_triangle.getByteSize();
-    const Buffer stagingBuffer(m_device, m_physicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+void VK::m_createDepthResources() {
+    VkExtent3D extent{};
+    extent.width = m_swapChainExtent.width;
+    extent.height = m_swapChainExtent.height;
+    extent.depth = 1;
 
-    m_vertexBuffer = std::make_unique<Buffer>(m_device, m_physicalDevice, bufferSize,
-                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    stagingBuffer.setMemory(m_triangle.getVertices().data());
-    stagingBuffer.copyTo(*m_vertexBuffer, m_commandPool, m_graphicsQueue);
-    stagingBuffer.destroy();
-}
-
-void VK::m_createIndexBuffer() {
-    const size_t bufferSize = m_triangle.getIndicesByteSize();
-    const Buffer stagingBuffer(m_device, m_physicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    m_indexBuffer = std::make_unique<Buffer>(m_device, m_physicalDevice, bufferSize,
-                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    void* data;
-    vkMapMemory(m_device, stagingBuffer.getMemory(), 0, stagingBuffer.getSize(), 0, &data);
-    memcpy(data, m_triangle.getIndices().data(), stagingBuffer.getSize());
-    vkUnmapMemory(m_device, stagingBuffer.getMemory());
-
-    stagingBuffer.copyTo(*m_indexBuffer, m_commandPool, m_graphicsQueue);
-    stagingBuffer.destroy();
+    m_depthImage = std::make_unique<DepthImage>(m_device, m_physicalDevice, extent);
+    m_depthImage->transitionLayout(m_commandPool, m_graphicsQueue, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void VK::m_createUniformBuffers() {
@@ -866,8 +875,8 @@ void VK::m_createDescriptorSets() {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.sampler = m_sampler;
-        imageInfo.imageLayout = m_texture->getImage().getLayout();
-        imageInfo.imageView = m_texture->getImage().getImageView();
+        imageInfo.imageLayout = m_model->getTexture().getImage().getLayout();
+        imageInfo.imageView = m_model->getTexture().getImage().getImageView();
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -890,7 +899,7 @@ void VK::m_createDescriptorSets() {
     }
 }
 
-void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t imageIndex) const {
+void VK::m_recordCommandBuffer(const VkCommandBuffer commandBuffer, const uint32_t imageIndex) const {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -904,20 +913,25 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = m_swapChainExtent;
 
-    constexpr VkClearValue clearColor = { { { 0, 0, 0, 1.0f } } };
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    // clang-format off
+    std::array<VkClearValue, 2> clearValues;
+    clearValues[0].color = {{ 0, 0, 0, 1.0f }};
+    clearValues[1].depthStencil = { 1.0f, 0 };
+    // clang-format on
+
+    renderPassInfo.clearValueCount = clearValues.size();
+    renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-    const VkBuffer buffers[] = { m_vertexBuffer->buffer() };
-    const VkDeviceSize offsets[] = { 0 };
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->buffer(), 0, VK_INDEX_TYPE_UINT16);
+    const std::array buffers = { m_model->getVertexBuffer().buffer() };
+    constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
+    vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
+    vkCmdBindIndexBuffer(commandBuffer, m_model->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT16);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
                             &m_descriptorSets[m_currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, m_triangle.getIndices().size(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, m_model->getIndices().size(), 1, 0, 0, 0);
     vkCmdEndRenderPass(commandBuffer);
 
     VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));
@@ -935,13 +949,16 @@ void VK::m_initVulkan() {
     m_createRenderPass();
     m_createUniformBuffers();
     m_createCommandPool();
+    m_createDepthResources();
 
-    m_texture = std::make_unique<Texture>(m_device,              //
-                                          m_physicalDevice,      //
-                                          m_commandPool,         //
-                                          m_graphicsQueue,       //
-                                          "./assets/souley.png"  //
+    m_model = std::make_unique<Model>(m_device,                    //
+                                      m_physicalDevice,            //
+                                      m_commandPool,               //
+                                      m_graphicsQueue,             //
+                                      "./assets/viking_room.obj",  //
+                                      "./assets/viking_room.png"   //
     );
+
     m_createSampler();
 
     m_createDescriptorSetLayout();
@@ -950,8 +967,8 @@ void VK::m_initVulkan() {
     m_createGraphicsPipeline();
     m_createFramebuffers();
 
-    m_createVertexBuffer();
-    m_createIndexBuffer();
+    // m_createVertexBuffer();
+    // m_createIndexBuffer();
     m_createCommandBuffers();
     m_createSyncObjects();
 
@@ -968,11 +985,10 @@ void VK::m_destroyVulkan() const {
     vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
 
-    vkDestroySampler(m_device, m_sampler, nullptr);
-    m_texture->destroy();
+    m_depthImage->destroy();
 
-    m_vertexBuffer->destroy();
-    m_indexBuffer->destroy();
+    vkDestroySampler(m_device, m_sampler, nullptr);
+    m_model->destroy();
 
     vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);

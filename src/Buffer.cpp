@@ -53,7 +53,7 @@ void Buffer::setMemory(const void* src, const VkDeviceSize offset, const VkMemor
 }
 
 void Buffer::copyTo(const Buffer& dst, const VkCommandPool& commandPool, const VkQueue& queue) const {
-    OneTimeCommand cmd(m_device, commandPool, queue);
+    const OneTimeCommand cmd(m_device, commandPool, queue);
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;

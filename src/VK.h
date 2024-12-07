@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "Buffer.h"
+#include "DepthImage.h"
+#include "objects/Model.h"
 #include "objects/Triangle.h"
 
 struct QueueFamilyIndices {
@@ -66,11 +68,14 @@ class VK {
     std::vector<VkFence> m_inFlightFences;
     uint32_t m_currentFrame = 0;
 
-    Triangle m_triangle;
-    std::unique_ptr<Texture> m_texture;
+    std::unique_ptr<DepthImage> m_depthImage;
+
+    // Triangle m_triangle;
+    std::unique_ptr<Model> m_model;
+    // std::unique_ptr<Texture> m_texture;
     VkSampler m_sampler = VK_NULL_HANDLE;
-    std::unique_ptr<Buffer> m_vertexBuffer;
-    std::unique_ptr<Buffer> m_indexBuffer;
+    // std::unique_ptr<Buffer> m_vertexBuffer;
+    // std::unique_ptr<Buffer> m_indexBuffer;
 
     std::vector<std::unique_ptr<Buffer>> m_uniformBuffers;
     std::vector<void*> m_uniformBuffersMapped;
@@ -113,9 +118,11 @@ class VK {
     void m_createCommandBuffers();
     void m_createSyncObjects();
 
+    void m_createDepthResources();
+
     void m_createSampler();
-    void m_createVertexBuffer();
-    void m_createIndexBuffer();
+    // void m_createVertexBuffer();
+    // void m_createIndexBuffer();
     void m_createUniformBuffers();
     void m_createDescriptorPool();
     void m_createDescriptorSets();

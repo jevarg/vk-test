@@ -5,7 +5,8 @@
 class Image {
    public:
     explicit Image(VkDevice device, VkPhysicalDevice physicalDevice, const VkExtent3D& extent, VkFormat format,
-                   VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
+                   VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+                   VkImageAspectFlags aspectFlags);
 
     void destroy() const;
     void transitionLayout(VkCommandPool commandPool, VkQueue queue, VkImageLayout newLayout);
@@ -22,7 +23,7 @@ class Image {
     [[nodiscard]]
     VkImageView getImageView() const;
 
-   private:
+   protected:
     const VkDevice m_device;
 
     VkImage m_image = VK_NULL_HANDLE;
