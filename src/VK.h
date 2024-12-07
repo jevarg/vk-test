@@ -84,7 +84,7 @@ class VK {
 
     void m_mainLoop();
     void m_drawFrame();
-    void m_updateUniformBuffer(uint32_t imageIndex);
+    void m_updateUniformBuffer(uint32_t imageIndex) const;
 
     // VK stuff
     [[nodiscard]]

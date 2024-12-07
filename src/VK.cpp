@@ -111,15 +111,17 @@ void VK::m_drawFrame() {
     m_currentFrame = m_currentFrame % maxInflightFrames;
 }
 
-void VK::m_updateUniformBuffer(const uint32_t imageIndex) {
+void VK::m_updateUniformBuffer(const uint32_t imageIndex) const {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
     const auto currentTime = std::chrono::high_resolution_clock::now();
     const float time = std::chrono::duration<float>(currentTime - startTime).count();
 
+    const glm::mat4 mat = rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
     UniformBufferObject ubo{};
-    ubo.model = rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = rotate(mat, time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    ubo.view = lookAt(glm::vec3(5.0f, 5.0f, 2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     const float aspectRatio =
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
@@ -928,7 +930,7 @@ void VK::m_recordCommandBuffer(const VkCommandBuffer commandBuffer, const uint32
     const std::array buffers = { m_model->getVertexBuffer().buffer() };
     constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
     vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
-    vkCmdBindIndexBuffer(commandBuffer, m_model->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(commandBuffer, m_model->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
                             &m_descriptorSets[m_currentFrame], 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, m_model->getIndices().size(), 1, 0, 0, 0);
@@ -951,12 +953,12 @@ void VK::m_initVulkan() {
     m_createCommandPool();
     m_createDepthResources();
 
-    m_model = std::make_unique<Model>(m_device,                    //
-                                      m_physicalDevice,            //
-                                      m_commandPool,               //
-                                      m_graphicsQueue,             //
-                                      "./assets/viking_room.obj",  //
-                                      "./assets/viking_room.png"   //
+    m_model = std::make_unique<Model>(m_device,           //
+                                      m_physicalDevice,   //
+                                      m_commandPool,      //
+                                      m_graphicsQueue,    //
+                                      "./assets/jg.obj",  //
+                                      "./assets/jg.png"   //
     );
 
     m_createSampler();
