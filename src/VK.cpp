@@ -623,8 +623,8 @@ void VK::m_createDescriptorSetLayout() {
 }
 
 void VK::m_createGraphicsPipeline() {
-    const Shader vertShader(m_vkContext, "./shaders/vert.spv");
-    const Shader fragShader(m_vkContext, "./shaders/frag.spv");
+    const Shader vertShader(m_vkContext, "./shaders/tri.vert", Shader::Vertex);
+    const Shader fragShader(m_vkContext, "./shaders/tri.frag", Shader::Fragment);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

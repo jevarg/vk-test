@@ -2,11 +2,24 @@ cmake_minimum_required(VERSION 3.29)
 project(VKTest)
 
 set(CMAKE_CXX_STANDARD 20)
+set(VULKAN_SDK $ENV{VULKAN_SDK})
 
 find_package(fmt REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
+
+find_library(SHADERC_COMBINED_LIB
+        NAMES shaderc_combinedd
+        HINTS ${VULKAN_SDK}/Lib
+        REQUIRED
+)
+
+find_library(SHADERC_UTIL_LIB
+        NAMES shaderc_utild
+        HINTS ${VULKAN_SDK}/Lib
+        REQUIRED
+)
 
 add_executable(VKTest
         src/main.cpp
@@ -48,4 +61,6 @@ target_link_libraries(VKTest PRIVATE
         SDL2::SDL2main
         glm::glm
         Vulkan::Vulkan
+        ${SHADERC_COMBINED_LIB}
+        ${SHADERC_UTIL_LIB}
 )

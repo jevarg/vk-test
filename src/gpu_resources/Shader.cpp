@@ -4,19 +4,22 @@
 
 #include <fstream>
 
-Shader::Shader(const VulkanContext& vkContext, const char* path) : m_vkContext(vkContext) {
-    fmt::println("Creating shader module from {}", path);
-    std::ifstream file(path, std::ios::ate | std::ios::binary);
+Shader::Shader(const VulkanContext& vkContext, const char* path, const Type shaderType)
+    : m_vkContext(vkContext), m_filePath(path), m_type(shaderType) {
+    std::ifstream file(m_filePath, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
-        throw std::runtime_error(fmt::format("Unable to open {}", path));
+        throw std::runtime_error(fmt::format("Unable to open {}", m_filePath));
     }
 
     const std::streamsize fileSize = file.tellg();
     file.seekg(0);
-    m_bytecode.resize(fileSize);
-    file.read(m_bytecode.data(), fileSize);
+
+    std::string glslString;
+    glslString.reserve(fileSize);
+    glslString.assign((std::istreambuf_iterator(file)), std::istreambuf_iterator<char>());
     file.close();
 
+    m_compile(glslString);
     m_createModule();
 }
 
@@ -28,11 +31,24 @@ const VkShaderModule& Shader::getModule() const {
     return m_module;
 }
 
+void Shader::m_compile(const std::string& glslString) {
+    const shaderc::Compiler compiler;
+    const shaderc::SpvCompilationResult res =
+        compiler.CompileGlslToSpv(glslString, static_cast<shaderc_shader_kind>(m_type), m_filePath);
+
+    if (res.GetCompilationStatus() != shaderc_compilation_status_success) {
+        throw std::runtime_error(fmt::format("Could not compile {}: {}", m_filePath, res.GetErrorMessage()));
+    }
+
+    fmt::println("Compiled {} with {} warning(s)", m_filePath, res.GetNumWarnings());
+    m_bytecode.assign(res.begin(), res.end());
+}
+
 void Shader::m_createModule() {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = m_bytecode.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(m_bytecode.data());
+    createInfo.codeSize = sizeof(m_bytecode[0]) * m_bytecode.size();
+    createInfo.pCode = m_bytecode.data();
 
     if (vkCreateShaderModule(m_vkContext.device, &createInfo, nullptr, &m_module) != VK_SUCCESS) {
         throw std::runtime_error("Unable to create shader module");

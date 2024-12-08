@@ -1,13 +1,17 @@
 #pragma once
+
 #include <vulkan/vulkan_core.h>
 
+#include <shaderc/shaderc.hpp>
 #include <vector>
 
 #include "types/VulkanContext.h"
 
 class Shader {
    public:
-    explicit Shader(const VulkanContext &vkContext, const char *path);
+    enum Type { Vertex = shaderc_vertex_shader, Fragment = shaderc_fragment_shader };
+
+    explicit Shader(const VulkanContext &vkContext, const char *path, Type shaderType);
 
     ~Shader();
 
@@ -16,9 +20,12 @@ class Shader {
 
    private:
     const VulkanContext &m_vkContext;
+    const char *m_filePath;
+    const Type m_type;
 
-    std::vector<char> m_bytecode;
+    std::vector<uint32_t> m_bytecode;
     VkShaderModule m_module = VK_NULL_HANDLE;
 
+    void m_compile(const std::string &glslString);
     void m_createModule();
 };
