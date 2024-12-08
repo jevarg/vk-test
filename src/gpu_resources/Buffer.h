@@ -1,15 +1,17 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
+
 #include "Texture.h"
+#include "types/VulkanContext.h"
 
 class Buffer {
    public:
-    Buffer(const VkDevice& device, const VkPhysicalDevice& physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage,
+    Buffer(const VulkanContext& vkContext, VkDeviceSize size, VkBufferUsageFlags usage,
            VkMemoryPropertyFlags properties);
 
    private:
-    const VkDevice& m_device;
+    const VulkanContext& m_vkContext;
     const VkDeviceSize m_size;
 
    public:

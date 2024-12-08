@@ -1,17 +1,17 @@
 #pragma once
 
 #include <SDL_video.h>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include <memory>
 #include <optional>
 #include <set>
 #include <vector>
 
-#include "Buffer.h"
-#include "DepthImage.h"
+#include "gpu_resources/Buffer.h"
+#include "gpu_resources/DepthImage.h"
 #include "objects/Model.h"
-#include "objects/Triangle.h"
+#include "types/VulkanContext.h"
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
@@ -44,14 +44,16 @@ class VK {
 
     VkInstance m_instance = VK_NULL_HANDLE;
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
-    VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-    VkDevice m_device = VK_NULL_HANDLE;
+
+    // VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+    // VkDevice m_device = VK_NULL_HANDLE;
+    VulkanContext m_vkContext;
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
     VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
 
-    VkQueue m_graphicsQueue = VK_NULL_HANDLE;
+    // VkQueue m_graphicsQueue = VK_NULL_HANDLE;
     VkQueue m_presentQueue = VK_NULL_HANDLE;
 
     VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
@@ -61,7 +63,7 @@ class VK {
     VkExtent2D m_swapChainExtent{};
     std::vector<VkFramebuffer> m_framebuffers;
 
-    VkCommandPool m_commandPool = VK_NULL_HANDLE;
+    // VkCommandPool m_commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> m_commandBuffers;
     std::vector<VkSemaphore> m_imageAvailableSemaphores;
     std::vector<VkSemaphore> m_renderFinishedSemaphores;

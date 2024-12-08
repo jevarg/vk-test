@@ -3,10 +3,10 @@
 #include "OneTimeCommand.h"
 #include "vkutil.h"
 
-Image::Image(const VkDevice device, const VkPhysicalDevice physicalDevice, const VkExtent3D &extent,
-             const VkFormat format, const VkImageTiling tiling, const VkImageUsageFlags usage,
-             const VkMemoryPropertyFlags properties, const VkImageAspectFlags aspectFlags)
-    : m_device(device), m_extent(extent), m_layout(VK_IMAGE_LAYOUT_UNDEFINED) {
+Image::Image(const VulkanContext &vkContext, const VkExtent3D &extent, const VkFormat format,
+             const VkImageTiling tiling, const VkImageUsageFlags usage, const VkMemoryPropertyFlags properties,
+             const VkImageAspectFlags aspectFlags)
+    : m_vkContext(vkContext), m_extent(extent), m_layout(VK_IMAGE_LAYOUT_UNDEFINED) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -20,21 +20,21 @@ Image::Image(const VkDevice device, const VkPhysicalDevice physicalDevice, const
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VK_CHECK("failed to create image", vkCreateImage(m_device, &imageInfo, nullptr, &m_image));
+    VK_CHECK("failed to create image", vkCreateImage(m_vkContext.device, &imageInfo, nullptr, &m_image));
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(device, m_image, &memRequirements);
+    vkGetImageMemoryRequirements(m_vkContext.device, m_image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = findMemoryType(m_vkContext.physicalDevice, memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &m_deviceMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(m_vkContext.device, &allocInfo, nullptr, &m_deviceMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(device, m_image, m_deviceMemory, 0);
+    vkBindImageMemory(m_vkContext.device, m_image, m_deviceMemory, 0);
 
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -47,17 +47,17 @@ Image::Image(const VkDevice device, const VkPhysicalDevice physicalDevice, const
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    VK_CHECK("failed to create image view", vkCreateImageView(m_device, &viewInfo, nullptr, &m_imageView));
+    VK_CHECK("failed to create image view", vkCreateImageView(m_vkContext.device, &viewInfo, nullptr, &m_imageView));
 }
 
 void Image::destroy() const {
-    vkFreeMemory(m_device, m_deviceMemory, nullptr);
-    vkDestroyImageView(m_device, m_imageView, nullptr);
-    vkDestroyImage(m_device, m_image, nullptr);
+    vkFreeMemory(m_vkContext.device, m_deviceMemory, nullptr);
+    vkDestroyImageView(m_vkContext.device, m_imageView, nullptr);
+    vkDestroyImage(m_vkContext.device, m_image, nullptr);
 }
 
-void Image::transitionLayout(const VkCommandPool commandPool, const VkQueue queue, const VkImageLayout newLayout) {
-    const OneTimeCommand cmd(m_device, commandPool, queue);
+void Image::transitionLayout(VkCommandPool commandPool, VkQueue queue, const VkImageLayout newLayout) {
+    const OneTimeCommand cmd(m_vkContext.device, commandPool, queue);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

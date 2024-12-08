@@ -4,14 +4,13 @@
 
 #include <vector>
 
-#include "Buffer.h"
-#include "Texture.h"
+#include "gpu_resources/Buffer.h"
+#include "gpu_resources/Texture.h"
 #include "types/Vertex.h"
 
 class Model {
    public:
-    explicit Model(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue,
-                   const char* modelPath, const char* texturePath);
+    explicit Model(const VulkanContext& vkContext, const char* modelPath, const char* texturePath);
 
     void destroy() const;
 
@@ -31,8 +30,7 @@ class Model {
     const std::vector<uint32_t>& getIndices() const;
 
    private:
-    const VkDevice m_device;
-    const VkPhysicalDevice m_physicalDevice;
+    const VulkanContext& m_vkContext;
 
     Texture m_texture;
     std::unique_ptr<Buffer> m_vertexBuffer;

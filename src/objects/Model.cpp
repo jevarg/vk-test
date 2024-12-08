@@ -5,11 +5,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-Model::Model(const VkDevice device, const VkPhysicalDevice physicalDevice, const VkCommandPool commandPool,
-             const VkQueue queue, const char* modelPath, const char* texturePath)
-    : m_device(device),
-      m_physicalDevice(physicalDevice),
-      m_texture(device, physicalDevice, commandPool, queue, texturePath) {
+Model::Model(const VulkanContext& vkContext, const char* modelPath, const char* texturePath)
+    : m_vkContext(vkContext), m_texture(vkContext, texturePath) {
     tinyobj::attrib_t attrib;
 
     std::vector<tinyobj::shape_t> shapes;
@@ -44,10 +41,10 @@ Model::Model(const VkDevice device, const VkPhysicalDevice physicalDevice, const
         }
     }
 
-    m_createVertexBuffer(commandPool, queue);
-    m_createIndexBuffer(commandPool, queue);
+    m_createVertexBuffer(m_vkContext.commandPool, m_vkContext.graphicsQueue);
+    m_createIndexBuffer(m_vkContext.commandPool, m_vkContext.graphicsQueue);
 
-    fmt::println("Loaded model: {}", modelPath);
+    fmt::println("Loaded model: {} ({} vertices)", modelPath, m_vertices.size());
 }
 
 void Model::destroy() const {
@@ -77,12 +74,12 @@ const std::vector<uint32_t>& Model::getIndices() const {
     return m_indices;
 }
 
-void Model::m_createVertexBuffer(const VkCommandPool commandPool, const VkQueue queue) {
+void Model::m_createVertexBuffer(VkCommandPool commandPool, VkQueue queue) {
     const size_t bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
-    const Buffer stagingBuffer(m_device, m_physicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    const Buffer stagingBuffer(m_vkContext, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    m_vertexBuffer = std::make_unique<Buffer>(m_device, m_physicalDevice, bufferSize,
+    m_vertexBuffer = std::make_unique<Buffer>(m_vkContext, bufferSize,
                                               VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -91,19 +88,19 @@ void Model::m_createVertexBuffer(const VkCommandPool commandPool, const VkQueue 
     stagingBuffer.destroy();
 }
 
-void Model::m_createIndexBuffer(const VkCommandPool commandPool, const VkQueue queue) {
+void Model::m_createIndexBuffer(VkCommandPool commandPool, VkQueue queue) {
     const size_t bufferSize = sizeof(m_indices[0]) * m_indices.size();
-    const Buffer stagingBuffer(m_device, m_physicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    const Buffer stagingBuffer(m_vkContext, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    m_indexBuffer = std::make_unique<Buffer>(m_device, m_physicalDevice, bufferSize,
+    m_indexBuffer = std::make_unique<Buffer>(m_vkContext, bufferSize,
                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     void* data;
-    vkMapMemory(m_device, stagingBuffer.getMemory(), 0, stagingBuffer.getSize(), 0, &data);
+    vkMapMemory(m_vkContext.device, stagingBuffer.getMemory(), 0, stagingBuffer.getSize(), 0, &data);
     memcpy(data, m_indices.data(), stagingBuffer.getSize());
-    vkUnmapMemory(m_device, stagingBuffer.getMemory());
+    vkUnmapMemory(m_vkContext.device, stagingBuffer.getMemory());
 
     stagingBuffer.copyTo(*m_indexBuffer, commandPool, queue);
     stagingBuffer.destroy();

@@ -12,30 +12,30 @@ add_executable(VKTest
         src/main.cpp
         src/vkutil.h
 
-        src/Buffer.cpp
-        src/Buffer.h
-        src/DepthImage.cpp
-        src/DepthImage.h
-        src/Image.cpp
-        src/Image.h
         src/OneTimeCommand.cpp
         src/OneTimeCommand.h
-        src/Shader.cpp
-        src/Shader.h
-        src/Texture.cpp
-        src/Texture.h
         src/VK.cpp
         src/VK.h
 
-        src/types/Vertex.h
-        src/types/UniformBufferObject.h
+        src/gpu_resources/Buffer.cpp
+        src/gpu_resources/Buffer.h
+        src/gpu_resources/DepthImage.cpp
+        src/gpu_resources/DepthImage.h
+        src/gpu_resources/Image.cpp
+        src/gpu_resources/Image.h
+        src/gpu_resources/Shader.cpp
+        src/gpu_resources/Shader.h
+        src/gpu_resources/Texture.cpp
+        src/gpu_resources/Texture.h
 
         src/objects/Model.cpp
         src/objects/Model.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
 
-        external/include/tiny_obj_loader.h
+        src/types/Vertex.h
+        src/types/UniformBufferObject.h
+        src/types/VulkanContext.h
 )
 
 target_include_directories(VKTest PRIVATE

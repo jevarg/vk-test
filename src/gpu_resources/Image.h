@@ -2,11 +2,12 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include "types/VulkanContext.h"
+
 class Image {
    public:
-    explicit Image(VkDevice device, VkPhysicalDevice physicalDevice, const VkExtent3D& extent, VkFormat format,
-                   VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-                   VkImageAspectFlags aspectFlags);
+    explicit Image(const VulkanContext& vkContext, const VkExtent3D& extent, VkFormat format, VkImageTiling tiling,
+                   VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags);
 
     void destroy() const;
     void transitionLayout(VkCommandPool commandPool, VkQueue queue, VkImageLayout newLayout);
@@ -24,7 +25,7 @@ class Image {
     VkImageView getImageView() const;
 
    protected:
-    const VkDevice m_device;
+    const VulkanContext& m_vkContext;
 
     VkImage m_image = VK_NULL_HANDLE;
     VkDeviceMemory m_deviceMemory = VK_NULL_HANDLE;
