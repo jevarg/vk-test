@@ -8,6 +8,7 @@
 #include <set>
 #include <vector>
 
+#include "gfx/Camera.h"
 #include "gpu_resources/Buffer.h"
 #include "gpu_resources/DepthImage.h"
 #include "objects/Model.h"
@@ -45,15 +46,12 @@ class VK {
     VkInstance m_instance = VK_NULL_HANDLE;
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
-    // VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-    // VkDevice m_device = VK_NULL_HANDLE;
     VulkanContext m_vkContext;
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
     VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
 
-    // VkQueue m_graphicsQueue = VK_NULL_HANDLE;
     VkQueue m_presentQueue = VK_NULL_HANDLE;
 
     VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
@@ -63,7 +61,6 @@ class VK {
     VkExtent2D m_swapChainExtent{};
     std::vector<VkFramebuffer> m_framebuffers;
 
-    // VkCommandPool m_commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> m_commandBuffers;
     std::vector<VkSemaphore> m_imageAvailableSemaphores;
     std::vector<VkSemaphore> m_renderFinishedSemaphores;
@@ -72,12 +69,10 @@ class VK {
 
     std::unique_ptr<DepthImage> m_depthImage;
 
-    // Triangle m_triangle;
     std::unique_ptr<Model> m_model;
-    // std::unique_ptr<Texture> m_texture;
     VkSampler m_sampler = VK_NULL_HANDLE;
-    // std::unique_ptr<Buffer> m_vertexBuffer;
-    // std::unique_ptr<Buffer> m_indexBuffer;
+
+    std::unique_ptr<Camera> m_camera;
 
     std::vector<std::unique_ptr<Buffer>> m_uniformBuffers;
     std::vector<void*> m_uniformBuffersMapped;

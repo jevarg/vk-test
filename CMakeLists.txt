@@ -47,6 +47,9 @@ add_executable(VKTest
         src/objects/Model.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
+        src/gfx/Camera.cpp
+        src/gfx/Camera.h
+        src/common/Transform.h
 )
 
 target_include_directories(VKTest PRIVATE

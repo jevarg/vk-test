@@ -54,6 +54,10 @@ void Model::destroy() const {
     m_texture.destroy();
 }
 
+const Transform& Model::getTransform() const {
+    return m_transform;
+}
+
 const Texture& Model::getTexture() const {
     return m_texture;
 }
@@ -72,6 +76,14 @@ const std::vector<Vertex>& Model::getVertices() const {
 
 const std::vector<uint32_t>& Model::getIndices() const {
     return m_indices;
+}
+
+void Model::translate(const glm::vec3& v) {
+    m_transform.translate(v);
+}
+
+void Model::rotate(const glm::vec4& v) {
+    m_transform.rotate(v);
 }
 
 void Model::m_createVertexBuffer(VkCommandPool commandPool, VkQueue queue) {

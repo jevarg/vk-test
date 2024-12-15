@@ -111,20 +111,13 @@ void VK::m_drawFrame() {
 }
 
 void VK::m_updateUniformBuffer(const uint32_t imageIndex) const {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    const auto currentTime = std::chrono::high_resolution_clock::now();
-    const float time = std::chrono::duration<float>(currentTime - startTime).count();
-
-    const glm::mat4 mat = rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    m_camera->translate({ 0.02f, 0.0f, 0.0f });
+    m_model->rotate({ 0.0f, 1.0f, 0.0f, 0.05f });
 
     UniformBufferObject ubo{};
-    ubo.model = rotate(mat, time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.view = lookAt(glm::vec3(5.0f, 5.0f, 2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    const float aspectRatio =
-        static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
-    ubo.projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 10.0f);
+    ubo.model = m_model->getTransform().getMatrix();
+    ubo.view = m_camera->getView();
+    ubo.projection = m_camera->getProjection();
     ubo.projection[1][1] *= -1;  // inverting y because vulkan != gl
 
     memcpy(m_uniformBuffersMapped[imageIndex], &ubo, sizeof(UniformBufferObject));
@@ -960,6 +953,7 @@ void VK::m_initVulkan() {
     m_createDepthResources();
 
     m_model = std::make_unique<Model>(m_vkContext, "./assets/jg.obj", "./assets/jg.png");
+    m_model->rotate({ 1.0f, 0, 0, glm::radians(90.0f) });
 
     m_createSampler();
 
@@ -973,6 +967,11 @@ void VK::m_initVulkan() {
     // m_createIndexBuffer();
     m_createCommandBuffers();
     m_createSyncObjects();
+
+    const float aspectRatio =
+        static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
+    m_camera = std::make_unique<Camera>(aspectRatio);
+    m_camera->setPosition({ 5.0f, 5.0f, 0.0f });
 
     fmt::println("Good to go :)");
 }
