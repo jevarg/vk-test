@@ -2,8 +2,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include "../types/VulkanContext.h"
 #include "Texture.h"
-#include "types/VulkanContext.h"
 
 class Buffer {
    public:

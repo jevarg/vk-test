@@ -1,11 +1,9 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-
 #include <memory>
 
+#include "../types/VulkanContext.h"
 #include "Image.h"
-#include "types/VulkanContext.h"
 
 class Buffer;
 

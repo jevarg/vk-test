@@ -3,7 +3,7 @@
 #include "vkutil.h"
 
 OneTimeCommand::OneTimeCommand(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& queue)
-    : m_device(device), m_commandPool(commandPool), m_queue(queue) {
+    : m_commandPool(commandPool), m_queue(queue), m_device(device) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;

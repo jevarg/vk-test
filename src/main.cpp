@@ -1,9 +1,7 @@
 #include <SDL2/SDL.h>
 #include <fmt/base.h>
 
-#include <vector>
-
-#include "VK.h"
+#include "gfx/vk/VK.h"
 
 void PrintSDLError() {
     fmt::println(stderr, "Error: {}", SDL_GetError());
@@ -42,10 +40,6 @@ int main(int, char**) {
 #endif
 
     SDL_Window* window = InitSDL();
-    int* s = 0;
-    uint8_t* ss = 0;
-    uint_fast8_t* ssdf = 0;
-    int* sh = 0;
     if (window == nullptr) {
         return EXIT_FAILURE;
     }

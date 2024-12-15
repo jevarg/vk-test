@@ -1,8 +1,8 @@
 #pragma once
 
-#include <types/Vertex.h>
-
 #include <vector>
+
+#include "gfx/vk/types/Vertex.h"
 
 class Triangle {
     const std::vector<Vertex> m_vertices{

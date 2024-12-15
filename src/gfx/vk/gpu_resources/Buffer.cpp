@@ -1,7 +1,7 @@
 #include "Buffer.h"
 
-#include "OneTimeCommand.h"
-#include "vkutil.h"
+#include "gfx/vk/OneTimeCommand.h"
+#include "gfx/vk/vkutil.h"
 
 Buffer::Buffer(const VulkanContext& vkContext, const VkDeviceSize size, const VkBufferUsageFlags usage,
                const VkMemoryPropertyFlags properties)

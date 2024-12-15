@@ -5,7 +5,7 @@
 #include <shaderc/shaderc.hpp>
 #include <vector>
 
-#include "types/VulkanContext.h"
+#include "../types/VulkanContext.h"
 
 class Shader {
    public:

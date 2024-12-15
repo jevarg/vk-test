@@ -23,32 +23,30 @@ find_library(SHADERC_UTIL_LIB
 
 add_executable(VKTest
         src/main.cpp
-        src/vkutil.h
 
-        src/OneTimeCommand.cpp
-        src/OneTimeCommand.h
-        src/VK.cpp
-        src/VK.h
-
-        src/gpu_resources/Buffer.cpp
-        src/gpu_resources/Buffer.h
-        src/gpu_resources/DepthImage.cpp
-        src/gpu_resources/DepthImage.h
-        src/gpu_resources/Image.cpp
-        src/gpu_resources/Image.h
-        src/gpu_resources/Shader.cpp
-        src/gpu_resources/Shader.h
-        src/gpu_resources/Texture.cpp
-        src/gpu_resources/Texture.h
+        src/gfx/vk/vkutil.h
+        src/gfx/vk/OneTimeCommand.cpp
+        src/gfx/vk/OneTimeCommand.h
+        src/gfx/vk/VK.cpp
+        src/gfx/vk/VK.h
+        src/gfx/vk/gpu_resources/Buffer.cpp
+        src/gfx/vk/gpu_resources/Buffer.h
+        src/gfx/vk/gpu_resources/DepthImage.cpp
+        src/gfx/vk/gpu_resources/DepthImage.h
+        src/gfx/vk/gpu_resources/Image.cpp
+        src/gfx/vk/gpu_resources/Image.h
+        src/gfx/vk/gpu_resources/Shader.cpp
+        src/gfx/vk/gpu_resources/Shader.h
+        src/gfx/vk/gpu_resources/Texture.cpp
+        src/gfx/vk/gpu_resources/Texture.h
+        src/gfx/vk/types/Vertex.h
+        src/gfx/vk/types/UniformBufferObject.h
+        src/gfx/vk/types/VulkanContext.h
 
         src/objects/Model.cpp
         src/objects/Model.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
-
-        src/types/Vertex.h
-        src/types/UniformBufferObject.h
-        src/types/VulkanContext.h
 )
 
 target_include_directories(VKTest PRIVATE

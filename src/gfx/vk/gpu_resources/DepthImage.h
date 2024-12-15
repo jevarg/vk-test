@@ -2,8 +2,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include "../types/VulkanContext.h"
 #include "Image.h"
-#include "types/VulkanContext.h"
 
 class DepthImage : public Image {
    public:

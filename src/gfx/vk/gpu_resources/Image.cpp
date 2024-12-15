@@ -1,7 +1,7 @@
 #include "Image.h"
 
-#include "OneTimeCommand.h"
-#include "vkutil.h"
+#include "gfx/vk/OneTimeCommand.h"
+#include "gfx/vk/vkutil.h"
 
 Image::Image(const VulkanContext &vkContext, const VkExtent3D &extent, const VkFormat format,
              const VkImageTiling tiling, const VkImageUsageFlags usage, const VkMemoryPropertyFlags properties,

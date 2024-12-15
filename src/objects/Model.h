@@ -4,9 +4,9 @@
 
 #include <vector>
 
-#include "gpu_resources/Buffer.h"
-#include "gpu_resources/Texture.h"
-#include "types/Vertex.h"
+#include "gfx/vk/gpu_resources/Buffer.h"
+#include "gfx/vk/gpu_resources/Texture.h"
+#include "gfx/vk/types/Vertex.h"
 
 class Model {
    public:

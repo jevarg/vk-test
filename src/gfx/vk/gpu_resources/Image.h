@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "types/VulkanContext.h"
+#include "../types/VulkanContext.h"
 
 class Image {
    public:
