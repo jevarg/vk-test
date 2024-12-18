@@ -1,21 +1,23 @@
 #pragma once
 
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 struct Transform {
-    glm::mat4 translation = glm::mat4(1.0f);
-    glm::mat4 rotation = glm::mat4(1.0f);
-    glm::mat4 scale = glm::mat4(1.0f);
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::quat rotation = glm::identity<glm::quat>();
+    glm::vec3 scale = glm::vec3(1.0f);
 
-    glm::mat4 getMatrix() const {
-        return translation * rotation * scale;
+    [[nodiscard]]
+    glm::mat4 getTransformation() const {
+        const glm::mat4 translationMatrix = translate(glm::mat4(1.0f), position);
+        const glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
+        const glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scale);
+
+        return translationMatrix * rotationMatrix * scaleMatrix;
     }
 
-    void translate(const glm::vec3& v) {
-        translation = glm::translate(translation, v);
-    }
-
-    void rotate(const glm::vec4& v) {
-        rotation = glm::rotate(rotation, v.w, glm::vec3(v));
+    void rotate(const float angle, const glm::vec3& axis) {
+        rotation = glm::rotate(rotation, angle, axis);
     }
 };

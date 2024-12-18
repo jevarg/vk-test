@@ -3,9 +3,9 @@
 #include <vulkan/vulkan_core.h>
 
 struct VulkanContext {
-    VkDevice device;
-    VkPhysicalDevice physicalDevice;
+    VkDevice device = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
-    VkCommandPool commandPool;
-    VkQueue graphicsQueue;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
 };

@@ -14,6 +14,8 @@
 #include <thread>
 
 #include "gpu_resources/Shader.h"
+#include "input/Keyboard.h"
+#include "input/Mouse.h"
 #include "types/UniformBufferObject.h"
 #include "types/Vertex.h"
 #include "vkutil.h"
@@ -25,6 +27,7 @@ const std::vector requiredVKExtensions = {
 };
 
 VK::VK(SDL_Window* window) {
+    Keyboard::init();
     m_window = window;
 }
 
@@ -44,6 +47,11 @@ void VK::m_mainLoop() {
                 break;
             }
         }
+
+        Keyboard::update();
+        Mouse::update();
+
+        m_camera->update(0);
 
         m_drawFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -111,11 +119,12 @@ void VK::m_drawFrame() {
 }
 
 void VK::m_updateUniformBuffer(const uint32_t imageIndex) const {
-    m_camera->translate({ 0.02f, 0.0f, 0.0f });
-    m_model->rotate({ 0.0f, 1.0f, 0.0f, 0.05f });
+    // m_camera->translate({ 0.02f, 0.0f, 0.0f });
+    // m_camera->rotate(0.02f, { 0.0f, 1.0f, 0.0f });
+    m_model->rotate(0.05f, { 0.0f, 1.0f, 0.0f });
 
     UniformBufferObject ubo{};
-    ubo.model = m_model->getTransform().getMatrix();
+    ubo.model = m_model->getTransform().getTransformation();
     ubo.view = m_camera->getView();
     ubo.projection = m_camera->getProjection();
     ubo.projection[1][1] *= -1;  // inverting y because vulkan != gl
@@ -953,7 +962,7 @@ void VK::m_initVulkan() {
     m_createDepthResources();
 
     m_model = std::make_unique<Model>(m_vkContext, "./assets/jg.obj", "./assets/jg.png");
-    m_model->rotate({ 1.0f, 0, 0, glm::radians(90.0f) });
+    // m_model->rotate(glm::radians(90.0f), { 1.0f, 0, 0 });
 
     m_createSampler();
 
@@ -971,7 +980,8 @@ void VK::m_initVulkan() {
     const float aspectRatio =
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
     m_camera = std::make_unique<Camera>(aspectRatio);
-    m_camera->setPosition({ 5.0f, 5.0f, 0.0f });
+    m_camera->setPosition({ 0.0f, 0.0f, -5.0f });
+    m_camera->rotate(glm::radians(180.0f), { 0.0f, 1.0f, 0.0f });
 
     fmt::println("Good to go :)");
 }

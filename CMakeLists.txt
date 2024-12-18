@@ -50,6 +50,9 @@ add_executable(VKTest
         src/gfx/Camera.cpp
         src/gfx/Camera.h
         src/common/Transform.h
+        src/common/Thing.h
+        src/input/Keyboard.h
+        src/input/Mouse.h
 )
 
 target_include_directories(VKTest PRIVATE

@@ -3,25 +3,24 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 
-class Camera {
+#include "common/Thing.h"
+#include "common/Transform.h"
+
+class Camera : public Thing {
    public:
     explicit Camera(float aspectRatio);
 
-    void setPosition(const glm::vec3& pos);
-
     [[nodiscard]]
-    const glm::mat4& getView();
+    glm::mat4 getView() const;
 
     [[nodiscard]]
     const glm::mat4& getProjection() const;
 
-    void translate(const glm::vec3& vec);
+    void update(float delta);
 
    private:
-    glm::vec3 m_pos{};
-    glm::vec3 m_target{};
     glm::mat4 m_projection{};
 
-    bool m_hasMoved = true;
-    glm::mat4 m_view = glm::identity<glm::mat4>();
+    float m_speed = 0.1f;
+    float m_sensitivity = 0.5f;
 };

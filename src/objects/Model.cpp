@@ -78,14 +78,6 @@ const std::vector<uint32_t>& Model::getIndices() const {
     return m_indices;
 }
 
-void Model::translate(const glm::vec3& v) {
-    m_transform.translate(v);
-}
-
-void Model::rotate(const glm::vec4& v) {
-    m_transform.rotate(v);
-}
-
 void Model::m_createVertexBuffer(VkCommandPool commandPool, VkQueue queue) {
     const size_t bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
     const Buffer stagingBuffer(m_vkContext, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
