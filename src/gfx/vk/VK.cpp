@@ -935,13 +935,13 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-    const std::array buffers = { m_model->getVertexBuffer().buffer() };
+    const std::array buffers = { m_model->getMesh().getVertexBuffer().buffer() };
     constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
     vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
-    vkCmdBindIndexBuffer(commandBuffer, m_model->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(commandBuffer, m_model->getMesh().getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
                             &m_descriptorSets[m_currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, m_model->getIndices().size(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, m_model->getMesh().getIndices().size(), 1, 0, 0, 0);
     vkCmdEndRenderPass(commandBuffer);
 
     VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));

@@ -53,6 +53,10 @@ add_executable(VKTest
         src/common/Thing.h
         src/input/Keyboard.h
         src/input/Mouse.h
+        src/objects/Plane.cpp
+        src/objects/Plane.h
+        src/objects/Mesh.cpp
+        src/objects/Mesh.h
 )
 
 target_include_directories(VKTest PRIVATE

@@ -22,6 +22,11 @@ class Thing {
         m_transform.position = v;
     }
 
+    [[nodiscard]]
+    const Transform& getTransform() const {
+        return m_transform;
+    }
+
    protected:
     Transform m_transform;
 };

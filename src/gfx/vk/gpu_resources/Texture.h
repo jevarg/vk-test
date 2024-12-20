@@ -9,7 +9,8 @@ class Buffer;
 
 class Texture {
    public:
-    explicit Texture(const VulkanContext& vkContext, const char* filename);
+    Texture(const VulkanContext& vkContext, const char* filename);
+    Texture(const Texture& texture) = default;
 
     void destroy() const;
 
