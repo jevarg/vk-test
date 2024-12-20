@@ -36,11 +36,11 @@ void Camera::update(const float delta) {
     }
 
     const glm::vec2& mouseDelta = Mouse::getDelta();
-    if (mouseDelta.x) {
+    if (mouseDelta.x != 0) {
         rotate(-m_sensitivity * mouseDelta.x, { 0.0f, 1.0f, 0.0f });
     }
 
-    if (mouseDelta.y) {
+    if (mouseDelta.y != 0) {
         rotate(-m_sensitivity * mouseDelta.y, { 1.0f, 0.0f, 0.0f });
     }
 }
