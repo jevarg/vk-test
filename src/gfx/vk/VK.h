@@ -70,6 +70,7 @@ class VK {
     std::unique_ptr<DepthImage> m_depthImage;
 
     std::unique_ptr<Model> m_model;
+    std::unique_ptr<Model> m_plane;
     VkSampler m_sampler = VK_NULL_HANDLE;
 
     std::unique_ptr<Camera> m_camera;

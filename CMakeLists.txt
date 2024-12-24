@@ -24,11 +24,13 @@ find_library(SHADERC_UTIL_LIB
 add_executable(VKTest
         src/main.cpp
 
-        src/gfx/vk/vkutil.h
+        src/gfx/Camera.cpp
+        src/gfx/Camera.h
         src/gfx/vk/OneTimeCommand.cpp
         src/gfx/vk/OneTimeCommand.h
         src/gfx/vk/VK.cpp
         src/gfx/vk/VK.h
+        src/gfx/vk/vkutil.h
         src/gfx/vk/gpu_resources/Buffer.cpp
         src/gfx/vk/gpu_resources/Buffer.h
         src/gfx/vk/gpu_resources/DepthImage.cpp
@@ -47,16 +49,14 @@ add_executable(VKTest
         src/objects/Model.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
-        src/gfx/Camera.cpp
-        src/gfx/Camera.h
-        src/common/Transform.h
-        src/common/Thing.h
-        src/input/Keyboard.h
-        src/input/Mouse.h
         src/objects/Plane.cpp
         src/objects/Plane.h
         src/objects/Mesh.cpp
         src/objects/Mesh.h
+        src/common/Transform.h
+        src/common/Thing.h
+        src/input/Keyboard.h
+        src/input/Mouse.h
 )
 
 target_include_directories(VKTest PRIVATE

@@ -19,6 +19,7 @@
 #include "types/UniformBufferObject.h"
 #include "types/Vertex.h"
 #include "vkutil.h"
+#include "objects/Plane.h"
 
 constexpr uint32_t maxInflightFrames = 2;
 
@@ -119,10 +120,6 @@ void VK::m_drawFrame() {
 }
 
 void VK::m_updateUniformBuffer(const uint32_t imageIndex) const {
-    // m_camera->translate({ 0.02f, 0.0f, 0.0f });
-    // m_camera->rotate(0.02f, { 0.0f, 1.0f, 0.0f });
-    m_model->rotate(0.05f, { 0.0f, 1.0f, 0.0f });
-
     UniformBufferObject ubo{};
     ubo.model = m_model->getTransform().getTransformation();
     ubo.view = m_camera->getView();
@@ -961,7 +958,9 @@ void VK::m_initVulkan() {
     m_createCommandPool();
     m_createDepthResources();
 
-    m_model = std::make_unique<Model>(m_vkContext, "./assets/jg.obj", "./assets/jg.png");
+    m_model = std::make_unique<Model>(m_vkContext, "./assets/viking_room.obj", "./assets/viking_room.png");
+    m_plane = std::make_unique<Plane>(m_vkContext, "./assets/souley.png");
+    m_plane->scale(glm::vec3(3.0f));
     // m_model->rotate(glm::radians(90.0f), { 1.0f, 0, 0 });
 
     m_createSampler();
@@ -1000,6 +999,7 @@ void VK::m_destroyVulkan() const {
 
     vkDestroySampler(m_vkContext.device, m_sampler, nullptr);
     m_model->destroy();
+    m_plane->destroy();
 
     vkDestroyPipeline(m_vkContext.device, m_graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_vkContext.device, m_pipelineLayout, nullptr);

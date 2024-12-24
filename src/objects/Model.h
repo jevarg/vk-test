@@ -6,8 +6,8 @@
 
 class Model : public Thing {
    public:
-    explicit Model(const VulkanContext& vkContext, const char* modelPath, const char* texturePath);
-    Model(const VulkanContext& vkContext, const Mesh& mesh, const Texture& texture);
+    explicit Model(const VulkanContext& vkContext, const char* meshPath, const char* texturePath);
+    Model(const VulkanContext& vkContext, Mesh mesh, Texture texture);
 
     void destroy() const;
 

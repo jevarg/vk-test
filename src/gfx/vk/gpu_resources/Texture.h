@@ -10,7 +10,8 @@ class Buffer;
 class Texture {
    public:
     Texture(const VulkanContext& vkContext, const char* filename);
-    Texture(const Texture& texture) = default;
+    Texture(Texture&& other) noexcept = default;
+    // Texture& operator=(Texture&& other) noexcept;
 
     void destroy() const;
 

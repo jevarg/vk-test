@@ -8,7 +8,12 @@
 
 class Mesh {
    public:
-    explicit Mesh(const VulkanContext& vkContext, const char* modelPath);
+    explicit Mesh(const VulkanContext&) {}
+
+    Mesh(const VulkanContext& vkContext, const char* modelPath);
+    Mesh(const VulkanContext& vkContext, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+    Mesh(Mesh&& other) noexcept = default;
+
     void destroy() const;
 
     [[nodiscard]]
@@ -27,9 +32,10 @@ class Mesh {
     std::unique_ptr<Buffer> m_vertexBuffer;
     std::unique_ptr<Buffer> m_indexBuffer;
 
-    std::vector<Vertex> m_vertices;
-    std::vector<uint32_t> m_indices;
-
     void m_createVertexBuffer(const VulkanContext& vkContext);
     void m_createIndexBuffer(const VulkanContext& vkContext);
+
+   protected:
+    std::vector<Vertex> m_vertices;
+    std::vector<uint32_t> m_indices;
 };

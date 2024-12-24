@@ -2,5 +2,6 @@
 #include "Model.h"
 
 class Plane : public Model {
-    explicit Plane();
+public:
+    explicit Plane(const VulkanContext& vkContext, const char* texturePath);
 };

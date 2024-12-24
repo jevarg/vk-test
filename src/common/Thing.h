@@ -18,6 +18,10 @@ class Thing {
         m_transform.rotate(angle, v);
     }
 
+    virtual void scale(const glm::vec3& v) {
+        m_transform.scale += v;
+    }
+
     virtual void setPosition(const glm::vec3& v) {
         m_transform.position = v;
     }
