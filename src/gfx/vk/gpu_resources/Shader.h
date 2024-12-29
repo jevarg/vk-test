@@ -11,7 +11,7 @@ class Shader {
    public:
     enum Type { Vertex = shaderc_vertex_shader, Fragment = shaderc_fragment_shader };
 
-    explicit Shader(const VulkanContext &vkContext, const char *path, Type shaderType);
+    explicit Shader(const char *path, Type shaderType);
 
     ~Shader();
 
@@ -19,7 +19,6 @@ class Shader {
     const VkShaderModule &getModule() const;
 
    private:
-    const VulkanContext &m_vkContext;
     const char *m_filePath;
     const Type m_type;
 

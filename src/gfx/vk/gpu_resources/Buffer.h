@@ -7,11 +7,10 @@
 
 class Buffer {
    public:
-    Buffer(const VulkanContext& vkContext, VkDeviceSize size, VkBufferUsageFlags usage,
+    Buffer(VkDeviceSize size, VkBufferUsageFlags usage,
            VkMemoryPropertyFlags properties);
 
    private:
-    const VulkanContext& m_vkContext;
     const VkDeviceSize m_size;
 
    public:
@@ -22,8 +21,8 @@ class Buffer {
     [[nodiscard]] const VkDeviceMemory& getMemory() const;
 
     void setMemory(const void* src, VkDeviceSize offset = 0, VkMemoryMapFlags flags = 0) const;
-    void copyTo(const Buffer& dst, const VkCommandPool& commandPool, const VkQueue& queue) const;
-    void copyTo(const Texture& texture, const VkCommandPool& commandPool, const VkQueue& queue) const;
+    void copyTo(const Buffer& dst) const;
+    void copyTo(const Texture& texture) const;
 
    private:
     VkBuffer m_buffer = VK_NULL_HANDLE;

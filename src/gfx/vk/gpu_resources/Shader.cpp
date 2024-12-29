@@ -1,11 +1,9 @@
 #include "Shader.h"
 
 #include <fmt/format.h>
-
 #include <fstream>
 
-Shader::Shader(const VulkanContext& vkContext, const char* path, const Type shaderType)
-    : m_vkContext(vkContext), m_filePath(path), m_type(shaderType) {
+Shader::Shader(const char *path, const Type shaderType) : m_filePath(path), m_type(shaderType) {
     std::ifstream file(m_filePath, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
         throw std::runtime_error(fmt::format("Unable to open {}", m_filePath));
@@ -24,17 +22,17 @@ Shader::Shader(const VulkanContext& vkContext, const char* path, const Type shad
 }
 
 Shader::~Shader() {
-    vkDestroyShaderModule(m_vkContext.device, m_module, nullptr);
+    vkDestroyShaderModule(VulkanContext::get().getDevice(), m_module, nullptr);
 }
 
-const VkShaderModule& Shader::getModule() const {
+const VkShaderModule &Shader::getModule() const {
     return m_module;
 }
 
-void Shader::m_compile(const std::string& glslString) {
+void Shader::m_compile(const std::string &glslString) {
     const shaderc::Compiler compiler;
     const shaderc::SpvCompilationResult res =
-        compiler.CompileGlslToSpv(glslString, static_cast<shaderc_shader_kind>(m_type), m_filePath);
+            compiler.CompileGlslToSpv(glslString, static_cast<shaderc_shader_kind>(m_type), m_filePath);
 
     if (res.GetCompilationStatus() != shaderc_compilation_status_success) {
         throw std::runtime_error(fmt::format("Could not compile {}: {}", m_filePath, res.GetErrorMessage()));
@@ -50,7 +48,7 @@ void Shader::m_createModule() {
     createInfo.codeSize = sizeof(m_bytecode[0]) * m_bytecode.size();
     createInfo.pCode = m_bytecode.data();
 
-    if (vkCreateShaderModule(m_vkContext.device, &createInfo, nullptr, &m_module) != VK_SUCCESS) {
+    if (vkCreateShaderModule(VulkanContext::get().getDevice(), &createInfo, nullptr, &m_module) != VK_SUCCESS) {
         throw std::runtime_error("Unable to create shader module");
     }
 }

@@ -3,5 +3,5 @@
 
 class Plane : public Model {
 public:
-    explicit Plane(const VulkanContext& vkContext, const char* texturePath);
+    explicit Plane(Texture::ID textureID);
 };

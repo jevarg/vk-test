@@ -1,16 +1,18 @@
 #include "OneTimeCommand.h"
 
+#include "types/VulkanContext.h"
 #include "vkutil.h"
 
-OneTimeCommand::OneTimeCommand(const VkDevice& device, const VkCommandPool& commandPool, const VkQueue& queue)
-    : m_commandPool(commandPool), m_queue(queue), m_device(device) {
+OneTimeCommand::OneTimeCommand(const VkQueue& queue) : m_queue(queue) {
+    const VulkanContext& vkContext = VulkanContext::get();
+
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = m_commandPool;
+    allocInfo.commandPool = vkContext.getCommandPool();
     allocInfo.commandBufferCount = 1;
 
-    VK_CHECK("failed to allocate command buffer", vkAllocateCommandBuffers(m_device, &allocInfo, &buffer));
+    VK_CHECK("failed to allocate command buffer", vkAllocateCommandBuffers(vkContext.getDevice(), &allocInfo, &buffer));
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -30,5 +32,6 @@ OneTimeCommand::~OneTimeCommand() {
     VK_CHECK("failed to submit queue", vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
     VK_CHECK("failed to wait on graphics queue", vkQueueWaitIdle(m_queue));
 
-    vkFreeCommandBuffers(m_device, m_commandPool, 1, &buffer);
+    const VulkanContext& vkContext = VulkanContext::get();
+    vkFreeCommandBuffers(vkContext.getDevice(), vkContext.getCommandPool(), 1, &buffer);
 }

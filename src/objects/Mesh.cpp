@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 
-Mesh::Mesh(const VulkanContext& vkContext, const char* modelPath) {
+Mesh::Mesh(const char* modelPath) {
     tinyobj::attrib_t attrib;
 
     std::vector<tinyobj::shape_t> shapes;
@@ -41,16 +41,16 @@ Mesh::Mesh(const VulkanContext& vkContext, const char* modelPath) {
         }
     }
 
-    m_createVertexBuffer(vkContext);
-    m_createIndexBuffer(vkContext);
+    m_createVertexBuffer();
+    m_createIndexBuffer();
 }
 
-Mesh::Mesh(const VulkanContext &vkContext, const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices) {
+Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
     m_vertices = vertices;
     m_indices = indices;
 
-    m_createVertexBuffer(vkContext);
-    m_createIndexBuffer(vkContext);
+    m_createVertexBuffer();
+    m_createIndexBuffer();
 }
 
 void Mesh::destroy() const {
@@ -58,35 +58,37 @@ void Mesh::destroy() const {
     m_indexBuffer->destroy();
 }
 
-void Mesh::m_createVertexBuffer(const VulkanContext& vkContext) {
+void Mesh::m_createVertexBuffer() {
     const size_t bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
-    const Buffer stagingBuffer(vkContext, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    const Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    m_vertexBuffer = std::make_unique<Buffer>(vkContext, bufferSize,
-                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    m_vertexBuffer =
+        std::make_unique<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     stagingBuffer.setMemory(m_vertices.data());
-    stagingBuffer.copyTo(*m_vertexBuffer, vkContext.commandPool, vkContext.graphicsQueue);
+    stagingBuffer.copyTo(*m_vertexBuffer);
     stagingBuffer.destroy();
 }
 
-void Mesh::m_createIndexBuffer(const VulkanContext& vkContext) {
+void Mesh::m_createIndexBuffer() {
     const size_t bufferSize = sizeof(m_indices[0]) * m_indices.size();
-    const Buffer stagingBuffer(vkContext, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    const Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    m_indexBuffer = std::make_unique<Buffer>(vkContext, bufferSize,
-                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    m_indexBuffer =
+        std::make_unique<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
+
+    const VulkanContext& vkContext = VulkanContext::get();
     void* data;
-    vkMapMemory(vkContext.device, stagingBuffer.getMemory(), 0, stagingBuffer.getSize(), 0, &data);
+    vkMapMemory(vkContext.getDevice(), stagingBuffer.getMemory(), 0, stagingBuffer.getSize(), 0, &data);
     memcpy(data, m_indices.data(), stagingBuffer.getSize());
-    vkUnmapMemory(vkContext.device, stagingBuffer.getMemory());
+    vkUnmapMemory(vkContext.getDevice(), stagingBuffer.getMemory());
 
-    stagingBuffer.copyTo(*m_indexBuffer, vkContext.commandPool, vkContext.graphicsQueue);
+    stagingBuffer.copyTo(*m_indexBuffer);
     stagingBuffer.destroy();
 }
 

@@ -4,36 +4,12 @@
 #include <vulkan/vulkan_core.h>
 
 #include <memory>
-#include <optional>
-#include <set>
 #include <vector>
 
 #include "gfx/Camera.h"
 #include "gpu_resources/Buffer.h"
 #include "gpu_resources/DepthImage.h"
 #include "objects/Model.h"
-#include "types/VulkanContext.h"
-
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    [[nodiscard]]
-    bool isValid() const {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-
-    [[nodiscard]]
-    std::set<uint32_t> getUnique() const {
-        return { graphicsFamily.value(), presentFamily.value() };
-    }
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
 
 class VK {
    public:
@@ -46,13 +22,10 @@ class VK {
     VkInstance m_instance = VK_NULL_HANDLE;
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
-    VulkanContext m_vkContext;
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
     VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
-
-    VkQueue m_presentQueue = VK_NULL_HANDLE;
 
     VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
     std::vector<VkImage> m_swapChainImages;
@@ -69,8 +42,9 @@ class VK {
 
     std::unique_ptr<DepthImage> m_depthImage;
 
-    std::unique_ptr<Model> m_model;
-    std::unique_ptr<Model> m_plane;
+    std::vector<Texture> m_textures;
+    std::vector<Model> m_models;
+
     VkSampler m_sampler = VK_NULL_HANDLE;
 
     std::unique_ptr<Camera> m_camera;
@@ -90,12 +64,6 @@ class VK {
 
     void m_createVKInstance();
     void m_createSurface();
-    QueueFamilyIndices m_findQueueFamilies(VkPhysicalDevice device) const;
-    bool m_checkDeviceExtensionSupport(VkPhysicalDevice device);
-    SwapChainSupportDetails m_querySwapChainSupport(VkPhysicalDevice device);
-    bool m_isDeviceSuitable(VkPhysicalDevice device);
-    void m_pickPhysicalDevice();
-    void m_createLogicalDevice();
 
     VkSurfaceFormatKHR m_chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR m_chooseSurfacePresentMode(const std::vector<VkPresentModeKHR>& availableModes);
@@ -112,20 +80,18 @@ class VK {
     void m_createGraphicsPipeline();
     void m_createFramebuffers();
 
-    void m_createCommandPool();
     void m_createCommandBuffers();
     void m_createSyncObjects();
 
     void m_createDepthResources();
 
     void m_createSampler();
-    // void m_createVertexBuffer();
-    // void m_createIndexBuffer();
     void m_createUniformBuffers();
     void m_createDescriptorPool();
     void m_createDescriptorSets();
 
     void m_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
+    void m_drawModels(VkCommandBuffer commandBuffer) const;
 
     void m_initVulkan();
     void m_destroyVulkan() const;

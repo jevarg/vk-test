@@ -6,20 +6,18 @@
 
 class Model : public Thing {
    public:
-    explicit Model(const VulkanContext& vkContext, const char* meshPath, const char* texturePath);
-    Model(const VulkanContext& vkContext, Mesh mesh, Texture texture);
+    explicit Model(const char* meshPath, Texture::ID textureID);
+    Model(Mesh mesh, Texture::ID textureID);
 
     void destroy() const;
 
     [[nodiscard]]
-    const Texture& getTexture() const;
+    const Texture::ID& getTextureID() const;
 
     [[nodiscard]]
     const Mesh& getMesh() const;
 
    private:
-    const VulkanContext& m_vkContext;
-
-    Texture m_texture;
+    Texture::ID m_textureID;
     Mesh m_mesh;
 };

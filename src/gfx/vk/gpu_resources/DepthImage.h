@@ -7,6 +7,5 @@
 
 class DepthImage : public Image {
    public:
-    explicit DepthImage(const VulkanContext& vkContext, const VkExtent3D& extent,
-                        VkFormat format = VK_FORMAT_D32_SFLOAT /* TODO: findDepthFormat() */);
+    explicit DepthImage(const VkExtent3D& extent, VkFormat format = VK_FORMAT_D32_SFLOAT /* TODO: findDepthFormat() */);
 };

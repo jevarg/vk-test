@@ -41,9 +41,10 @@ add_executable(VKTest
         src/gfx/vk/gpu_resources/Shader.h
         src/gfx/vk/gpu_resources/Texture.cpp
         src/gfx/vk/gpu_resources/Texture.h
-        src/gfx/vk/types/Vertex.h
         src/gfx/vk/types/UniformBufferObject.h
+        src/gfx/vk/types/Vertex.h
         src/gfx/vk/types/VulkanContext.h
+        src/gfx/vk/types/VulkanContext.cpp
 
         src/objects/Model.cpp
         src/objects/Model.h
@@ -57,6 +58,8 @@ add_executable(VKTest
         src/common/Thing.h
         src/input/Keyboard.h
         src/input/Mouse.h
+        src/gfx/vk/gpu_resources/PhysicalDevice.cpp
+        src/gfx/vk/gpu_resources/PhysicalDevice.h
 )
 
 target_include_directories(VKTest PRIVATE

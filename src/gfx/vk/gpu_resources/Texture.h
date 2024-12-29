@@ -9,17 +9,24 @@ class Buffer;
 
 class Texture {
    public:
-    Texture(const VulkanContext& vkContext, const char* filename);
+    typedef size_t ID;
+
+    explicit Texture(const char* filename);
     Texture(Texture&& other) noexcept = default;
-    // Texture& operator=(Texture&& other) noexcept;
 
     void destroy() const;
 
     [[nodiscard]]
     const Image& getImage() const;
 
+    [[nodiscard]]
+    ID getID() const;
+
    private:
-    const VulkanContext& m_vkContext;
+    inline static ID lastID = 0;
+    static ID nextID() { return lastID++; }
+
+    const ID m_id = nextID();
 
     std::unique_ptr<Buffer> m_stagingBuffer;
     std::unique_ptr<Image> m_image;

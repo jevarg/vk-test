@@ -8,20 +8,18 @@
 
 #include <algorithm>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <set>
 #include <stdexcept>
 #include <thread>
 
 #include "gpu_resources/Shader.h"
 #include "input/Keyboard.h"
 #include "input/Mouse.h"
+#include "objects/Plane.h"
 #include "types/UniformBufferObject.h"
 #include "types/Vertex.h"
 #include "vkutil.h"
-#include "objects/Plane.h"
 
-constexpr uint32_t maxInflightFrames = 2;
+constexpr uint32_t maxInflightFrames = 1;
 
 const std::vector requiredVKExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -58,14 +56,15 @@ void VK::m_mainLoop() {
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 
-    vkDeviceWaitIdle(m_vkContext.device);
+    vkDeviceWaitIdle(VulkanContext::get().getDevice());
 }
 
 void VK::m_drawFrame() {
-    vkWaitForFences(m_vkContext.device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+    const VulkanContext& vkContext = VulkanContext::get();
+    vkWaitForFences(vkContext.getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
-    VkResult res = vkAcquireNextImageKHR(m_vkContext.device, m_swapChain, UINT64_MAX,
+    VkResult res = vkAcquireNextImageKHR(vkContext.getDevice(), m_swapChain, UINT64_MAX,
                                          m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 
     if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
@@ -75,7 +74,7 @@ void VK::m_drawFrame() {
 
     VK_CHECK("failed to acquire next image!", res);
 
-    vkResetFences(m_vkContext.device, 1, &m_inFlightFences[m_currentFrame]);
+    vkResetFences(vkContext.getDevice(), 1, &m_inFlightFences[m_currentFrame]);
 
     vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
     m_recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
@@ -97,7 +96,7 @@ void VK::m_drawFrame() {
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     VK_CHECK("failed to submit draw command buffer!",
-             vkQueueSubmit(m_vkContext.graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]));
+             vkQueueSubmit(vkContext.getGraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]));
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -109,7 +108,7 @@ void VK::m_drawFrame() {
     presentInfo.pSwapchains = swapChains;
     presentInfo.pImageIndices = &imageIndex;
 
-    res = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+    res = vkQueuePresentKHR(vkContext.getPresentQueue(), &presentInfo);
     if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
         m_recreateSwapChain();
     } else {
@@ -121,7 +120,6 @@ void VK::m_drawFrame() {
 
 void VK::m_updateUniformBuffer(const uint32_t imageIndex) const {
     UniformBufferObject ubo{};
-    ubo.model = m_model->getTransform().getTransformation();
     ubo.view = m_camera->getView();
     ubo.projection = m_camera->getProjection();
     ubo.projection[1][1] *= -1;  // inverting y because vulkan != gl
@@ -209,190 +207,6 @@ void VK::m_createSurface() {
     }
 }
 
-QueueFamilyIndices VK::m_findQueueFamilies(VkPhysicalDevice device) const {
-    QueueFamilyIndices indices{};
-
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-    if (queueFamilyCount == 0) {
-        throw std::runtime_error("Failed to get queue family count");
-    }
-
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-    uint32_t i = 0;
-    for (const VkQueueFamilyProperties& queueFamily : queueFamilies) {
-        if (indices.isValid()) {
-            break;  // We have found every required indices
-        }
-
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphicsFamily = i++;
-            continue;
-        }
-
-        VkBool32 isSupported;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &isSupported);
-        if (isSupported) {
-            indices.presentFamily = i++;
-            continue;
-        }
-
-        ++i;
-    }
-
-    return indices;
-}
-
-bool VK::m_checkDeviceExtensionSupport(const VkPhysicalDevice device) {
-    uint32_t extensionCount = 0;
-    VK_CHECK("Failed to count device extensions",
-             vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr));
-
-    std::vector<VkExtensionProperties> supportedExtensions(extensionCount);
-    VK_CHECK("Failed to enumerate device extensions",
-             vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, supportedExtensions.data()));
-
-    for (const char* requiredExtension : requiredVKExtensions) {
-        if (std::ranges::find_if(supportedExtensions.begin(), supportedExtensions.end(),
-                                 [&requiredExtension](const VkExtensionProperties& props) {
-                                     return strcmp(requiredExtension, props.extensionName) == 0;
-                                 }) == supportedExtensions.end()) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool VK::m_isDeviceSuitable(VkPhysicalDevice device) {
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(device, &properties);
-
-    VkPhysicalDeviceFeatures features;
-    vkGetPhysicalDeviceFeatures(device, &features);
-
-    // Keeping it simple for now.
-    // Later on, we can implement a simple device score system
-    // e.g.:
-    // https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/03_Physical_devices_and_queue_families.html#_base_device_suitability_checks
-    bool isSuitable = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && features.geometryShader &&
-                      features.samplerAnisotropy && m_checkDeviceExtensionSupport(device);
-
-    if (isSuitable) {
-        const QueueFamilyIndices queueFamilyIndices = m_findQueueFamilies(device);
-        const SwapChainSupportDetails swapChainSupport = m_querySwapChainSupport(device);
-
-        bool swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-
-        isSuitable = queueFamilyIndices.isValid() && swapChainAdequate;
-    }
-
-    fmt::println("{}: {}", properties.deviceName, isSuitable ? "OK" : "KO");
-    return isSuitable;
-}
-
-void VK::m_pickPhysicalDevice() {
-    fmt::println("Picking a suitable device");
-
-    uint32_t deviceCount = 0;
-    VK_CHECK("Failed to enumerate physical devices", vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr));
-
-    if (deviceCount == 0) {
-        throw std::runtime_error("Failed to find GPUs with Vulkan support");
-    }
-
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    VK_CHECK("Failed to enumerate physical devices",
-             vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data()));
-
-    for (VkPhysicalDevice device : devices) {
-        if (!m_isDeviceSuitable(device)) {
-            continue;
-        }
-
-        m_vkContext.physicalDevice = device;
-        break;
-    }
-
-    if (m_vkContext.physicalDevice == VK_NULL_HANDLE) {
-        throw std::runtime_error("Failed to find a suitable GPU");
-    }
-}
-
-void VK::m_createLogicalDevice() {
-    fmt::println("Creating logical device");
-
-    const QueueFamilyIndices indices = m_findQueueFamilies(m_vkContext.physicalDevice);
-    if (!indices.isValid()) {
-        throw std::runtime_error("Queue family indices is not valid (should not happen!)");
-    }
-
-    // Queues
-    float queuePriority = 1.0f;
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    for (const uint32_t index : indices.getUnique()) {
-        VkDeviceQueueCreateInfo queueCreateInfo{};
-        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = index;
-        queueCreateInfo.queueCount = 1;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
-        queueCreateInfos.push_back(queueCreateInfo);
-    }
-
-    // Features
-    VkPhysicalDeviceFeatures deviceFeatures{};
-    deviceFeatures.samplerAnisotropy = VK_TRUE;
-
-    // Device creation
-    VkDeviceCreateInfo deviceCreateInfo{};
-    deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
-    deviceCreateInfo.queueCreateInfoCount = queueCreateInfos.size();
-    deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-    deviceCreateInfo.enabledExtensionCount = requiredVKExtensions.size();
-    deviceCreateInfo.ppEnabledExtensionNames = requiredVKExtensions.data();
-
-    VK_CHECK("Failed to create vk logical device",
-             vkCreateDevice(m_vkContext.physicalDevice, &deviceCreateInfo, nullptr, &m_vkContext.device));
-
-    // We now get the newly created queues
-    vkGetDeviceQueue(m_vkContext.device, indices.graphicsFamily.value(), 0, &m_vkContext.graphicsQueue);
-    vkGetDeviceQueue(m_vkContext.device, indices.presentFamily.value(), 0, &m_presentQueue);
-}
-
-SwapChainSupportDetails VK::m_querySwapChainSupport(VkPhysicalDevice device) {
-    SwapChainSupportDetails details;
-
-    // Capabilities
-    VK_CHECK("Failed to get surface capabilities",
-             vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities));
-
-    // Pixel formats
-    uint32_t formatCount = 0;
-    VK_CHECK("Failed to count surface pixel formats",
-             vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr));
-    if (formatCount) {
-        details.formats.resize(formatCount);
-        VK_CHECK("Failed to get surface pixel formats",
-                 vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, details.formats.data()));
-    }
-
-    // Present modes
-    uint32_t presentModeCount = 0;
-    VK_CHECK("Failed to count surface present modes",
-             vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr));
-    if (presentModeCount) {
-        details.presentModes.resize(presentModeCount);
-        VK_CHECK("Failed to get surface present modes",
-                 vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount,
-                                                           details.presentModes.data()));
-    }
-
-    return details;
-}
-
 VkSurfaceFormatKHR VK::m_chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8_SRGB &&
@@ -430,7 +244,8 @@ VkExtent2D VK::m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilitie
 }
 
 void VK::m_createSwapChain() {
-    const SwapChainSupportDetails swapChainDetails = m_querySwapChainSupport(m_vkContext.physicalDevice);
+    const VulkanContext& vkContext = VulkanContext::get();
+    const SwapChainSupportDetails& swapChainDetails = vkContext.getPhysicalDevice().getSwapChainSupportDetails();
     const VkSurfaceFormatKHR surfaceFormat = m_chooseSurfaceFormat(swapChainDetails.formats);
     const VkPresentModeKHR presentMode = m_chooseSurfacePresentMode(swapChainDetails.presentModes);
     const VkExtent2D extent = m_chooseSurfaceExtent(swapChainDetails.capabilities);
@@ -452,7 +267,7 @@ void VK::m_createSwapChain() {
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     // QueueFamilies handling
-    const QueueFamilyIndices indices = m_findQueueFamilies(m_vkContext.physicalDevice);
+    const QueueFamilyIndices& indices = vkContext.getPhysicalDevice().getQueueFamilyIndices();
     const uint32_t familyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily.value() == indices.presentFamily.value()) {
@@ -464,38 +279,40 @@ void VK::m_createSwapChain() {
     }
 
     VK_CHECK("Failed to create vk swap chain",
-             vkCreateSwapchainKHR(m_vkContext.device, &createInfo, nullptr, &m_swapChain));
+             vkCreateSwapchainKHR(vkContext.getDevice(), &createInfo, nullptr, &m_swapChain));
 
     // Fetching swapChain images
     uint32_t imageCount = 0;
     VK_CHECK("Failed to count swap chain images",
-             vkGetSwapchainImagesKHR(m_vkContext.device, m_swapChain, &imageCount, nullptr));
+             vkGetSwapchainImagesKHR(vkContext.getDevice(), m_swapChain, &imageCount, nullptr));
 
     m_swapChainImages.resize(imageCount);
 
     VK_CHECK("Failed to get swap chain images",
-             vkGetSwapchainImagesKHR(m_vkContext.device, m_swapChain, &imageCount, m_swapChainImages.data()));
+             vkGetSwapchainImagesKHR(vkContext.getDevice(), m_swapChain, &imageCount, m_swapChainImages.data()));
 
     m_swapChainImageFormat = surfaceFormat.format;
     m_swapChainExtent = extent;
 }
 
 void VK::m_destroySwapChain() const {
+    const VkDevice& device = VulkanContext::get().getDevice();
+
     for (const VkFramebuffer& framebuffer : m_framebuffers) {
-        vkDestroyFramebuffer(m_vkContext.device, framebuffer, nullptr);
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
 
     for (const VkImageView& imageView : m_swapChainImageViews) {
-        vkDestroyImageView(m_vkContext.device, imageView, nullptr);
+        vkDestroyImageView(device, imageView, nullptr);
     }
 
-    vkDestroySwapchainKHR(m_vkContext.device, m_swapChain, nullptr);
+    vkDestroySwapchainKHR(device, m_swapChain, nullptr);
 }
 
 void VK::m_recreateSwapChain() {
     fmt::println("Recreating swap chain");
 
-    vkDeviceWaitIdle(m_vkContext.device);
+    vkDeviceWaitIdle(VulkanContext::get().getDevice());
 
     m_destroySwapChain();
 
@@ -530,7 +347,7 @@ void VK::m_createImageViews() {
         createInfo.subresourceRange.layerCount = 1;
 
         VK_CHECK("Failed to create image view",
-                 vkCreateImageView(m_vkContext.device, &createInfo, nullptr, &m_swapChainImageViews[i]));
+                 vkCreateImageView(VulkanContext::get().getDevice(), &createInfo, nullptr, &m_swapChainImageViews[i]));
     }
 }
 
@@ -591,7 +408,7 @@ void VK::m_createRenderPass() {
     renderPassInfo.pDependencies = &dependency;
 
     VK_CHECK("Failed to create render pass!",
-             vkCreateRenderPass(m_vkContext.device, &renderPassInfo, nullptr, &m_renderPass));
+             vkCreateRenderPass(VulkanContext::get().getDevice(), &renderPassInfo, nullptr, &m_renderPass));
 }
 
 void VK::m_createDescriptorSetLayout() {
@@ -618,12 +435,13 @@ void VK::m_createDescriptorSetLayout() {
     layoutInfo.pBindings = bindings.data();
 
     VK_CHECK("failed to create descriptor set layouts",
-             vkCreateDescriptorSetLayout(m_vkContext.device, &layoutInfo, nullptr, &m_descriptorSetLayout));
+             vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr, &m_descriptorSetLayout));
 }
 
 void VK::m_createGraphicsPipeline() {
-    const Shader vertShader(m_vkContext, "./shaders/tri.vert", Shader::Vertex);
-    const Shader fragShader(m_vkContext, "./shaders/tri.frag", Shader::Fragment);
+    const VulkanContext& vkContext = VulkanContext::get();
+    const Shader vertShader("./shaders/tri.vert", Shader::Type::Vertex);
+    const Shader fragShader("./shaders/tri.frag", Shader::Type::Fragment);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -721,13 +539,20 @@ void VK::m_createGraphicsPipeline() {
     depthStencil.depthWriteEnable = VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 
+    VkPushConstantRange pushConstant{};
+    pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstant.offset = 0;
+    pushConstant.size = sizeof(glm::mat4);
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
 
     VK_CHECK("Failed to create pipeline layout!",
-             vkCreatePipelineLayout(m_vkContext.device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
+             vkCreatePipelineLayout(vkContext.getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -748,7 +573,7 @@ void VK::m_createGraphicsPipeline() {
 
     VK_CHECK(
         "failed to create graphics pipeline!",
-        vkCreateGraphicsPipelines(m_vkContext.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline));
+        vkCreateGraphicsPipelines(vkContext.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline));
 }
 
 void VK::m_createFramebuffers() {
@@ -766,33 +591,22 @@ void VK::m_createFramebuffers() {
         framebufferInfo.layers = 1;
 
         VK_CHECK(fmt::format("unable to create framebuffer {}", i).c_str(),
-                 vkCreateFramebuffer(m_vkContext.device, &framebufferInfo, nullptr, &m_framebuffers[i]));
+                 vkCreateFramebuffer(VulkanContext::get().getDevice(), &framebufferInfo, nullptr, &m_framebuffers[i]));
     }
 }
 
-void VK::m_createCommandPool() {
-    const QueueFamilyIndices& indices = m_findQueueFamilies(m_vkContext.physicalDevice);
-
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
-
-    VK_CHECK("failed to create command pool!",
-             vkCreateCommandPool(m_vkContext.device, &poolInfo, nullptr, &m_vkContext.commandPool));
-}
-
 void VK::m_createCommandBuffers() {
+    const VulkanContext& vkContext = VulkanContext::get();
     m_commandBuffers.resize(maxInflightFrames);
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = m_vkContext.commandPool;
+    allocInfo.commandPool = vkContext.getCommandPool();
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = m_commandBuffers.size();
 
     VK_CHECK("failed to create command buffers!",
-             vkAllocateCommandBuffers(m_vkContext.device, &allocInfo, m_commandBuffers.data()));
+             vkAllocateCommandBuffers(vkContext.getDevice(), &allocInfo, m_commandBuffers.data()));
 }
 
 void VK::m_createSyncObjects() {
@@ -807,15 +621,17 @@ void VK::m_createSyncObjects() {
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
+    const VulkanContext& vkContext = VulkanContext::get();
+
     for (int i = 0; i < maxInflightFrames; ++i) {
         VK_CHECK("failed to create semaphore",
-                 vkCreateSemaphore(m_vkContext.device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]));
+                 vkCreateSemaphore(vkContext.getDevice(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]));
 
         VK_CHECK("failed to create semaphore",
-                 vkCreateSemaphore(m_vkContext.device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]));
+                 vkCreateSemaphore(vkContext.getDevice(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]));
 
         VK_CHECK("failed to create fence",
-                 vkCreateFence(m_vkContext.device, &fenceInfo, nullptr, &m_inFlightFences[i]));
+                 vkCreateFence(vkContext.getDevice(), &fenceInfo, nullptr, &m_inFlightFences[i]));
     }
 }
 
@@ -825,9 +641,8 @@ void VK::m_createDepthResources() {
     extent.height = m_swapChainExtent.height;
     extent.depth = 1;
 
-    m_depthImage = std::make_unique<DepthImage>(m_vkContext, extent);
-    m_depthImage->transitionLayout(m_vkContext.commandPool, m_vkContext.graphicsQueue,
-                                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    m_depthImage = std::make_unique<DepthImage>(extent);
+    m_depthImage->transitionLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void VK::m_createUniformBuffers() {
@@ -838,9 +653,9 @@ void VK::m_createUniformBuffers() {
 
     for (int i = 0; i < maxInflightFrames; ++i) {
         m_uniformBuffers[i] =
-            std::make_unique<Buffer>(m_vkContext, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            std::make_unique<Buffer>(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        vkMapMemory(m_vkContext.device, m_uniformBuffers[i]->getMemory(), 0, m_uniformBuffers[i]->getSize(), 0,
+        vkMapMemory(VulkanContext::get().getDevice(), m_uniformBuffers[i]->getMemory(), 0, m_uniformBuffers[i]->getSize(), 0,
                     &m_uniformBuffersMapped[i]);
     }
 }
@@ -859,10 +674,11 @@ void VK::m_createDescriptorPool() {
     poolInfo.maxSets = maxInflightFrames;
 
     VK_CHECK("failed to create descriptor pool",
-             vkCreateDescriptorPool(m_vkContext.device, &poolInfo, nullptr, &m_descriptorPool));
+             vkCreateDescriptorPool(VulkanContext::get().getDevice(), &poolInfo, nullptr, &m_descriptorPool));
 }
 
 void VK::m_createDescriptorSets() {
+    const VulkanContext& vkContext = VulkanContext::get();
     const std::vector layouts(maxInflightFrames, m_descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -872,7 +688,7 @@ void VK::m_createDescriptorSets() {
 
     m_descriptorSets.resize(maxInflightFrames);
     VK_CHECK("failed to allocate descriptor sets",
-             vkAllocateDescriptorSets(m_vkContext.device, &allocInfo, m_descriptorSets.data()));
+             vkAllocateDescriptorSets(vkContext.getDevice(), &allocInfo, m_descriptorSets.data()));
 
     for (int i = 0; i < maxInflightFrames; ++i) {
         VkDescriptorBufferInfo bufferInfo{};
@@ -882,8 +698,11 @@ void VK::m_createDescriptorSets() {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.sampler = m_sampler;
-        imageInfo.imageLayout = m_model->getTexture().getImage().getLayout();
-        imageInfo.imageView = m_model->getTexture().getImage().getImageView();
+        // TODO: Deal with that
+
+        const Texture& texture = m_textures.at(m_models[0].getTextureID());
+        imageInfo.imageLayout = texture.getImage().getLayout();
+        imageInfo.imageView = texture.getImage().getImageView();
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -902,7 +721,7 @@ void VK::m_createDescriptorSets() {
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        vkUpdateDescriptorSets(m_vkContext.device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+        vkUpdateDescriptorSets(vkContext.getDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
     }
 }
 
@@ -932,16 +751,26 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-    const std::array buffers = { m_model->getMesh().getVertexBuffer().buffer() };
-    constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
-    vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
-    vkCmdBindIndexBuffer(commandBuffer, m_model->getMesh().getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
-                            &m_descriptorSets[m_currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, m_model->getMesh().getIndices().size(), 1, 0, 0, 0);
+    m_drawModels(commandBuffer);
     vkCmdEndRenderPass(commandBuffer);
 
     VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));
+}
+
+void VK::m_drawModels(VkCommandBuffer commandBuffer) const {
+    for (const auto& model: m_models) {
+        const std::array buffers = { model.getMesh().getVertexBuffer().buffer() };
+        constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
+        vkCmdBindIndexBuffer(commandBuffer, model.getMesh().getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
+                                &m_descriptorSets[m_currentFrame], 0, nullptr);
+
+        const glm::mat4 constants = model.getTransform().getMatrix();
+        vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &constants);
+
+        vkCmdDrawIndexed(commandBuffer, model.getMesh().getIndices().size(), 1, 0, 0, 0);
+    }
 }
 
 void VK::m_initVulkan() {
@@ -949,19 +778,21 @@ void VK::m_initVulkan() {
 
     m_createVKInstance();
     m_createSurface();
-    m_pickPhysicalDevice();
-    m_createLogicalDevice();
+
+    VulkanContext::get().init(m_instance, m_surface);
+
     m_createSwapChain();
     m_createImageViews();
     m_createRenderPass();
     m_createUniformBuffers();
-    m_createCommandPool();
     m_createDepthResources();
 
-    m_model = std::make_unique<Model>(m_vkContext, "./assets/viking_room.obj", "./assets/viking_room.png");
-    m_plane = std::make_unique<Plane>(m_vkContext, "./assets/souley.png");
-    m_plane->scale(glm::vec3(3.0f));
-    // m_model->rotate(glm::radians(90.0f), { 1.0f, 0, 0 });
+    m_textures.emplace_back("./assets/viking_room.png");
+    m_textures.emplace_back("./assets/souley.png");
+
+    m_models.emplace_back("./assets/viking_room.obj", m_textures[0].getID());
+    m_models.push_back(Plane(m_textures[1].getID()));
+    m_models[1].scale(glm::vec3(3.0f));
 
     m_createSampler();
 
@@ -971,8 +802,6 @@ void VK::m_initVulkan() {
     m_createGraphicsPipeline();
     m_createFramebuffers();
 
-    // m_createVertexBuffer();
-    // m_createIndexBuffer();
     m_createCommandBuffers();
     m_createSyncObjects();
 
@@ -992,27 +821,32 @@ void VK::m_destroyVulkan() const {
         m_uniformBuffers[i]->destroy();
     }
 
-    vkDestroyDescriptorPool(m_vkContext.device, m_descriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(m_vkContext.device, m_descriptorSetLayout, nullptr);
+    VulkanContext& vkContext = VulkanContext::get();
+
+    vkDestroyDescriptorPool(vkContext.getDevice(), m_descriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(vkContext.getDevice(), m_descriptorSetLayout, nullptr);
 
     m_depthImage->destroy();
-
-    vkDestroySampler(m_vkContext.device, m_sampler, nullptr);
-    m_model->destroy();
-    m_plane->destroy();
-
-    vkDestroyPipeline(m_vkContext.device, m_graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(m_vkContext.device, m_pipelineLayout, nullptr);
-    vkDestroyRenderPass(m_vkContext.device, m_renderPass, nullptr);
-
-    for (int i = 0; i < maxInflightFrames; ++i) {
-        vkDestroySemaphore(m_vkContext.device, m_imageAvailableSemaphores[i], nullptr);
-        vkDestroySemaphore(m_vkContext.device, m_renderFinishedSemaphores[i], nullptr);
-        vkDestroyFence(m_vkContext.device, m_inFlightFences[i], nullptr);
+    for (const auto& texture: m_textures) {
+        texture.destroy();
     }
 
-    vkDestroyCommandPool(m_vkContext.device, m_vkContext.commandPool, nullptr);
-    vkDestroyDevice(m_vkContext.device, nullptr);
+    vkDestroySampler(vkContext.getDevice(), m_sampler, nullptr);
+    for (const auto& model: m_models) {
+        model.destroy();
+    }
+
+    vkDestroyPipeline(vkContext.getDevice(), m_graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(vkContext.getDevice(), m_pipelineLayout, nullptr);
+    vkDestroyRenderPass(vkContext.getDevice(), m_renderPass, nullptr);
+
+    for (int i = 0; i < maxInflightFrames; ++i) {
+        vkDestroySemaphore(vkContext.getDevice(), m_imageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(vkContext.getDevice(), m_renderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(vkContext.getDevice(), m_inFlightFences[i], nullptr);
+    }
+
+    vkContext.destroy();
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
 
@@ -1020,8 +854,10 @@ void VK::m_destroyVulkan() const {
 }
 
 void VK::m_createSampler() {
+    const VulkanContext& vkContext = VulkanContext::get();
+
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_vkContext.physicalDevice, &properties);
+    vkGetPhysicalDeviceProperties(vkContext.getPhysicalDevice().getUnderlying(), &properties);
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1045,5 +881,5 @@ void VK::m_createSampler() {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    VK_CHECK("failed to create sampler", vkCreateSampler(m_vkContext.device, &samplerInfo, nullptr, &m_sampler));
+    VK_CHECK("failed to create sampler", vkCreateSampler(vkContext.getDevice(), &samplerInfo, nullptr, &m_sampler));
 }
