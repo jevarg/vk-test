@@ -139,6 +139,10 @@ const VkPhysicalDevice &PhysicalDevice::getUnderlying() const {
     return m_underlying;
 }
 
+const VkPhysicalDeviceProperties &PhysicalDevice::getProperties() const {
+    return m_properties;
+}
+
 const QueueFamilyIndices &PhysicalDevice::getQueueFamilyIndices() const {
     return m_queueFamilies;
 }

@@ -35,6 +35,7 @@ public:
     uint32_t findMemoryType(uint32_t type, VkMemoryPropertyFlags properties) const;
 
     const VkPhysicalDevice& getUnderlying() const;
+    const VkPhysicalDeviceProperties& getProperties() const;
     const QueueFamilyIndices& getQueueFamilyIndices() const;
     const SwapChainSupportDetails& getSwapChainSupportDetails() const;
 

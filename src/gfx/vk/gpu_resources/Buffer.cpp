@@ -79,3 +79,7 @@ void Buffer::copyTo(const Texture& texture) const {
     vkCmdCopyBufferToImage(cmd.buffer, m_buffer, texture.getImage().getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                            &region);
 }
+
+void Buffer::update(const VkCommandBuffer& cmdBuffer, const void* data) const {
+    vkCmdUpdateBuffer(cmdBuffer, m_buffer, 0, m_size, data);
+}

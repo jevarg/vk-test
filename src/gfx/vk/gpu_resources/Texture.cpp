@@ -8,8 +8,10 @@
 #include <stdexcept>
 
 #include "Buffer.h"
+#include "gfx/vk/vkutil.h"
 
-Texture::Texture(const char *filename) {
+Texture::Texture(const char *filename, const VkDescriptorPool &descriptorPool,
+                 const VkDescriptorSetLayout &descriptorSetLayout) {
     int width = 0;
     int height = 0;
     int channels = 0;
@@ -41,26 +43,72 @@ Texture::Texture(const char *filename) {
 
     m_stagingBuffer->destroy();
 
+    m_createSampler();
+    m_createDescriptorSet(descriptorPool, descriptorSetLayout);
+
     fmt::println("Loaded texture: {}", filename);
 }
 
-// void Texture::createDescriptorSet(VkSampler sampler) {
-//     VkDescriptorImageInfo imageInfo{};
-//     imageInfo.sampler = sampler;
-//     imageInfo.imageLayout = m_image->getLayout();
-//     imageInfo.imageView = m_image->getImageView();
-//
-//     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-//     descriptorWrites[1].dstSet = m_descriptorSet;
-//     descriptorWrites[1].dstBinding = 1;
-//     descriptorWrites[1].dstArrayElement = 0;
-//     descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-//     descriptorWrites[1].descriptorCount = 1;
-//     descriptorWrites[1].pImageInfo = &imageInfo;
-// }
+void Texture::m_createDescriptorSet(const VkDescriptorPool &descriptorPool,
+                                    const VkDescriptorSetLayout &descriptorSetLayout) {
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &descriptorSetLayout;
+
+    VK_CHECK("Cannot create descriptor set",
+             vkAllocateDescriptorSets(VulkanContext::get().getDevice(), &allocInfo, &m_descriptorSet));
+
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.sampler = m_sampler;
+    imageInfo.imageLayout = m_image->getLayout();
+    imageInfo.imageView = m_image->getImageView();
+
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = m_descriptorSet;
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(VulkanContext::get().getDevice(), 1, &descriptorWrite, 0, nullptr);
+}
+
+void Texture::m_createSampler() {
+    const VulkanContext &vkContext = VulkanContext::get();
+    const VkPhysicalDeviceProperties &properties = vkContext.getPhysicalDevice().getProperties();
+
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_NEAREST;
+    samplerInfo.minFilter = VK_FILTER_NEAREST;
+
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    VK_CHECK("failed to create sampler", vkCreateSampler(vkContext.getDevice(), &samplerInfo, nullptr, &m_sampler));
+}
 
 void Texture::destroy() const {
     m_image->destroy();
+    vkDestroySampler(VulkanContext::get().getDevice(), m_sampler, nullptr);
 }
 
 const Image &Texture::getImage() const {
@@ -71,6 +119,6 @@ size_t Texture::getID() const {
     return m_id;
 }
 
-// VkDescriptorSet Texture::getDescriptorSet() const {
-//     return m_descriptorSet;
-// }
+const VkDescriptorSet& Texture::getDescriptorSet() const {
+    return m_descriptorSet;
+}
