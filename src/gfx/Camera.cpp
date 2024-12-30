@@ -10,6 +10,8 @@
 Camera::Camera(const float aspectRatio, const VkDescriptorPool& descriptorPool,
                const VkDescriptorSetLayout& descriptorSetLayout) {
     m_projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 10.0f);
+
+    // TODO: change that
     m_projection[1][1] *= -1;  // inverting y because vulkan != gl
 
     m_uniformBuffer =
