@@ -50,8 +50,8 @@ add_executable(VKTest
         src/objects/Model.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
-        src/objects/Plane.cpp
-        src/objects/Plane.h
+        src/objects/prefabs/Plane.cpp
+        src/objects/prefabs/Plane.h
         src/objects/Mesh.cpp
         src/objects/Mesh.h
         src/common/Transform.h
@@ -60,6 +60,10 @@ add_executable(VKTest
         src/input/Mouse.h
         src/gfx/vk/gpu_resources/PhysicalDevice.cpp
         src/gfx/vk/gpu_resources/PhysicalDevice.h
+        src/objects/prefabs/Cube.cpp
+        src/objects/prefabs/Cube.h
+        src/gfx/vk/gpu_resources/Pipeline.cpp
+        src/gfx/vk/gpu_resources/Pipeline.h
 )
 
 target_include_directories(VKTest PRIVATE

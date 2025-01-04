@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "gfx/Camera.h"
-#include "gpu_resources/Buffer.h"
 #include "gpu_resources/DepthImage.h"
 #include "objects/Model.h"
 
@@ -24,7 +23,11 @@ class VK {
 
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
-    VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
+
+    struct Pipeline {
+        VkPipeline scene;
+        VkPipeline skybox;
+    } m_pipelines;
 
     VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
     std::vector<VkImage> m_swapChainImages;
@@ -44,20 +47,14 @@ class VK {
     std::vector<Texture> m_textures;
     std::vector<Model> m_models;
 
-    // VkSampler m_sampler = VK_NULL_HANDLE;
-
     std::unique_ptr<Camera> m_camera;
 
-    // std::vector<std::unique_ptr<Buffer>> m_uniformBuffers;
-    // std::vector<void*> m_uniformBuffersMapped;
     VkDescriptorSetLayout m_sceneDescriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_textureDescriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
-    // std::vector<VkDescriptorSet> m_descriptorSets;
 
     void m_mainLoop();
     void m_drawFrame();
-    // void m_updateUniformBuffer(uint32_t imageIndex) const;
 
     // VK stuff
     [[nodiscard]]

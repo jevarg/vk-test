@@ -14,8 +14,8 @@
 #include "gpu_resources/Shader.h"
 #include "input/Keyboard.h"
 #include "input/Mouse.h"
-#include "objects/Plane.h"
-#include "types/UniformBufferObject.h"
+#include "objects/prefabs/Plane.h"
+#include "objects/prefabs/Cube.h"
 #include "types/Vertex.h"
 #include "vkutil.h"
 
@@ -78,7 +78,6 @@ void VK::m_drawFrame() {
 
     vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
     m_recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
-    // m_updateUniformBuffer(m_currentFrame);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -117,15 +116,6 @@ void VK::m_drawFrame() {
 
     m_currentFrame = m_currentFrame % maxInflightFrames;
 }
-
-// void VK::m_updateUniformBuffer(const uint32_t imageIndex) const {
-//     UniformBufferObject ubo{};
-//     ubo.view = m_camera->getView();
-//     ubo.projection = m_camera->getProjection();
-//     ubo.projection[1][1] *= -1;  // inverting y because vulkan != gl
-//
-//     memcpy(m_uniformBuffersMapped[imageIndex], &ubo, sizeof(UniformBufferObject));
-// }
 
 bool VK::m_setupVVL(const std::vector<const char*>& requestedLayers) const {
 #ifdef NDEBUG
@@ -577,7 +567,7 @@ void VK::m_createGraphicsPipeline() {
 
     VK_CHECK(
         "failed to create graphics pipeline!",
-        vkCreateGraphicsPipelines(vkContext.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline));
+        vkCreateGraphicsPipelines(vkContext.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipelines.scene));
 }
 
 void VK::m_createFramebuffers() {
@@ -753,7 +743,7 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines.scene);
 
     m_drawModels(commandBuffer);
     vkCmdEndRenderPass(commandBuffer);
@@ -799,10 +789,10 @@ void VK::m_initVulkan() {
     m_createDescriptorPool();
 
     m_textures.emplace_back("./assets/viking_room.png", m_descriptorPool, m_textureDescriptorSetLayout);
-    m_textures.emplace_back("./assets/souley.png", m_descriptorPool, m_textureDescriptorSetLayout);
+    m_textures.emplace_back("./assets/skybox-test.png", m_descriptorPool, m_textureDescriptorSetLayout);
 
     m_models.emplace_back("./assets/viking_room.obj", m_textures[0].getID());
-    m_models.push_back(Plane(m_textures[1].getID()));
+    m_models.push_back(Cube(m_textures[1].getID()));
     m_models[1].scale(glm::vec3(3.0f));
 
     // m_createDescriptorSets();
@@ -815,8 +805,8 @@ void VK::m_initVulkan() {
     const float aspectRatio =
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
     m_camera = std::make_unique<Camera>(aspectRatio, m_descriptorPool, m_sceneDescriptorSetLayout);
-    m_camera->setPosition({ 0.0f, 0.0f, -5.0f });
-    m_camera->rotate(glm::radians(180.0f), { 0.0f, 1.0f, 0.0f });
+    m_camera->setPosition({ 0.0f, 0.0f, 5.0f });
+    // m_camera->rotate(glm::radians(180.0f), { 0.0f, 1.0f, 0.0f });
 
     fmt::println("Good to go :)");
 }
@@ -841,7 +831,7 @@ void VK::m_destroyVulkan() const {
         model.destroy();
     }
 
-    vkDestroyPipeline(vkContext.getDevice(), m_graphicsPipeline, nullptr);
+    vkDestroyPipeline(vkContext.getDevice(), m_pipelines.scene, nullptr);
     vkDestroyPipelineLayout(vkContext.getDevice(), m_pipelineLayout, nullptr);
     vkDestroyRenderPass(vkContext.getDevice(), m_renderPass, nullptr);
 
