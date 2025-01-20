@@ -178,8 +178,12 @@ void VK::m_createVKInstance() {
         fmt::println("  {}", ext);
     }
 
+    instanceExtensions.push_back("VK_KHR_portability_enumeration");
+    instanceExtensions.push_back("VK_KHR_get_physical_device_properties2");
+
     VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
     createInfo.pApplicationInfo = &appInfo;
     createInfo.enabledExtensionCount = instanceExtensions.size();
     createInfo.ppEnabledExtensionNames = instanceExtensions.data();
