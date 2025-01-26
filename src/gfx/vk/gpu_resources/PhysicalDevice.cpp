@@ -39,15 +39,13 @@ void PhysicalDevice::m_findQueueFamilies(const VkSurfaceKHR &surface) {
         }
 
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            m_queueFamilies.graphicsFamily = i++;
-            continue;
+            m_queueFamilies.graphicsFamily = i;
         }
 
         VkBool32 isSupported;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_underlying, i, surface, &isSupported);
         if (isSupported) {
-            m_queueFamilies.presentFamily = i++;
-            continue;
+            m_queueFamilies.presentFamily = i;
         }
 
         ++i;
@@ -91,8 +89,10 @@ bool PhysicalDevice::isSuitable() const {
     // Later on, we can implement a simple device score system
     // e.g.:
     // https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/03_Physical_devices_and_queue_families.html#_base_device_suitability_checks
-    bool isOk = m_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && m_features.geometryShader &&
-                m_features.samplerAnisotropy && supportsExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
+    // bool isOk = m_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && m_features.geometryShader &&
+    //             m_features.samplerAnisotropy && supportsExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
+
+    bool isOk = m_features.samplerAnisotropy && supportsExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
 
     if (isOk) {
         const bool swapChainAdequate = !m_swapChainSupport.formats.empty() && !m_swapChainSupport.presentModes.empty();

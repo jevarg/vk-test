@@ -2,3 +2,5 @@
 build/
 shaders/*.spv
 CMakeUserPresets.json
+cmake-build*
+.DS_Store

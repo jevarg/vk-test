@@ -19,10 +19,14 @@ class Buffer {
     [[nodiscard]]
     const VkDeviceMemory& getMemory() const;
 
+    [[nodiscard]]
+    void *map() const;
+    void unmap() const;
+
     void setMemory(const void* src, VkDeviceSize offset = 0, VkMemoryMapFlags flags = 0) const;
     void update(const VkCommandBuffer& cmdBuffer, const void* data) const;
     void copyTo(const Buffer& dst) const;
-    void copyTo(const Texture& texture) const;
+    void copyTo(const Texture& texture, uint32_t layerCount) const;
 
    private:
     const VkDeviceSize m_size;

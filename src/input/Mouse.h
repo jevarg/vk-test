@@ -11,8 +11,8 @@ class Mouse {
         int rawMouseY = 0;
 
         uint32_t mMouseButtonState = SDL_GetRelativeMouseState(&rawMouseX, &rawMouseY);
-        m_delta.x = static_cast<float>(rawMouseX) / 640;
-        m_delta.y = static_cast<float>(rawMouseY) / 480;
+        m_delta.x = static_cast<float>(rawMouseX) / 1280;
+        m_delta.y = static_cast<float>(rawMouseY) / 1024;
     }
 
     static const glm::vec2& getDelta() {

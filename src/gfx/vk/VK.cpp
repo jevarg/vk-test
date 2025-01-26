@@ -14,8 +14,8 @@
 #include "gpu_resources/Shader.h"
 #include "input/Keyboard.h"
 #include "input/Mouse.h"
-#include "objects/prefabs/Plane.h"
 #include "objects/prefabs/Cube.h"
+#include "objects/prefabs/Plane.h"
 #include "types/Vertex.h"
 #include "vkutil.h"
 
@@ -168,8 +168,12 @@ void VK::m_createVKInstance() {
         fmt::println("  {}", ext);
     }
 
+    instanceExtensions.push_back("VK_KHR_portability_enumeration");
+    instanceExtensions.push_back("VK_KHR_get_physical_device_properties2");
+
     VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
     createInfo.pApplicationInfo = &appInfo;
     createInfo.enabledExtensionCount = instanceExtensions.size();
     createInfo.ppEnabledExtensionNames = instanceExtensions.data();
@@ -414,7 +418,8 @@ void VK::m_createDescriptorSetLayout() {
     layoutInfo.pBindings = &sceneLayoutBinding;
 
     VK_CHECK("failed to create scene descriptor set layout",
-             vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr, &m_sceneDescriptorSetLayout));
+             vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr,
+                                         &m_sceneDescriptorSetLayout));
 
     VkDescriptorSetLayoutBinding textureLayoutBinding{};
     textureLayoutBinding.binding = 0;
@@ -424,30 +429,12 @@ void VK::m_createDescriptorSetLayout() {
 
     layoutInfo.pBindings = &textureLayoutBinding;
     VK_CHECK("failed to create texture descriptor set layout",
-             vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr, &m_textureDescriptorSetLayout));
+             vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr,
+                                         &m_textureDescriptorSetLayout));
 }
 
 void VK::m_createGraphicsPipeline() {
     const VulkanContext& vkContext = VulkanContext::get();
-    const Shader vertShader("./shaders/tri.vert", Shader::Type::Vertex);
-    const Shader fragShader("./shaders/tri.frag", Shader::Type::Fragment);
-
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = vertShader.getModule();
-    vertShaderStageInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShader.getModule();
-    fragShaderStageInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo shaderStages[] = {
-        vertShaderStageInfo,
-        fragShaderStageInfo,
-    };
 
     VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
     std::array attributeDescriptions = Vertex::getAttributeDescriptions();
@@ -462,16 +449,6 @@ void VK::m_createGraphicsPipeline() {
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-    // const std::vector dynamicStates = {
-    //     VK_DYNAMIC_STATE_VIEWPORT,
-    //     VK_DYNAMIC_STATE_SCISSOR,
-    // };
-
-    // VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
-    // dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    // dynamicStateInfo.dynamicStateCount = dynamicStates.size();
-    // dynamicStateInfo.pDynamicStates = dynamicStates.data();
 
     VkViewport viewport{};
     viewport.width = static_cast<float>(m_swapChainExtent.width);
@@ -533,10 +510,7 @@ void VK::m_createGraphicsPipeline() {
     pushConstant.offset = 0;
     pushConstant.size = sizeof(glm::mat4);
 
-    const VkDescriptorSetLayout layouts[]{
-        m_sceneDescriptorSetLayout,
-        m_textureDescriptorSetLayout
-    };
+    const VkDescriptorSetLayout layouts[]{ m_sceneDescriptorSetLayout, m_textureDescriptorSetLayout };
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -548,26 +522,18 @@ void VK::m_createGraphicsPipeline() {
     VK_CHECK("Failed to create pipeline layout!",
              vkCreatePipelineLayout(vkContext.getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 
-    VkGraphicsPipelineCreateInfo pipelineInfo{};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shaderStages;
-    pipelineInfo.pVertexInputState = &vtxInputInfo;
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = nullptr;
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDepthStencilState = &depthStencil;
-    // pipelineInfo.pDynamicState = &dynamicStateInfo;
-    pipelineInfo.layout = m_pipelineLayout;
-    pipelineInfo.renderPass = m_renderPass;
-    pipelineInfo.subpass = 0;
+    m_pipelines.scene = std::make_unique<Pipeline>(
+        Pipeline::Type::Graphics, "./shaders/tri.vert", "./shaders/tri.frag", vtxInputInfo, inputAssembly,
+        viewportState, rasterizer, multisampling, colorBlending, depthStencil, m_pipelineLayout, m_renderPass);
 
-    VK_CHECK(
-        "failed to create graphics pipeline!",
-        vkCreateGraphicsPipelines(vkContext.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipelines.scene));
+    depthStencil.depthWriteEnable = VK_FALSE;
+    depthStencil.depthTestEnable = VK_FALSE;
+
+    rasterizer.cullMode = VK_CULL_MODE_NONE;
+    // rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    m_pipelines.skybox = std::make_unique<Pipeline>(
+        Pipeline::Type::Graphics, "./shaders/skybox.vert", "./shaders/skybox.frag", vtxInputInfo, inputAssembly,
+        viewportState, rasterizer, multisampling, colorBlending, depthStencil, m_pipelineLayout, m_renderPass);
 }
 
 void VK::m_createFramebuffers() {
@@ -649,7 +615,8 @@ void VK::m_createDepthResources() {
 //         m_uniformBuffers[i] =
 //             std::make_unique<Buffer>(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 //                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-//         vkMapMemory(VulkanContext::get().getDevice(), m_uniformBuffers[i]->getMemory(), 0, m_uniformBuffers[i]->getSize(), 0,
+//         vkMapMemory(VulkanContext::get().getDevice(), m_uniformBuffers[i]->getMemory(), 0,
+//         m_uniformBuffers[i]->getSize(), 0,
 //                     &m_uniformBuffersMapped[i]);
 //     }
 // }
@@ -665,7 +632,7 @@ void VK::m_createDescriptorPool() {
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = 3; // TODO: Do that
+    poolInfo.maxSets = 3;  // TODO: Do that
 
     VK_CHECK("failed to create descriptor pool",
              vkCreateDescriptorPool(VulkanContext::get().getDevice(), &poolInfo, nullptr, &m_descriptorPool));
@@ -684,39 +651,39 @@ void VK::m_createDescriptorPool() {
 //     VK_CHECK("failed to allocate descriptor sets",
 //              vkAllocateDescriptorSets(vkContext.getDevice(), &allocInfo, m_descriptorSets.data()));
 
-    // for (int i = 0; i < maxInflightFrames; ++i) {
-        // VkDescriptorBufferInfo bufferInfo{};
-        // bufferInfo.buffer = m_uniformBuffers[i]->buffer();
-        // bufferInfo.offset = 0;
-        // bufferInfo.range = sizeof(UniformBufferObject);
+// for (int i = 0; i < maxInflightFrames; ++i) {
+// VkDescriptorBufferInfo bufferInfo{};
+// bufferInfo.buffer = m_uniformBuffers[i]->buffer();
+// bufferInfo.offset = 0;
+// bufferInfo.range = sizeof(UniformBufferObject);
 
-        // VkDescriptorImageInfo imageInfo{};
-        // imageInfo.sampler = m_sampler;
-        // // TODO: Deal with that
-        //
-        // const Texture& texture = m_textures.at(m_models[0].getTextureID());
-        // imageInfo.imageLayout = texture.getImage().getLayout();
-        // imageInfo.imageView = texture.getImage().getImageView();
+// VkDescriptorImageInfo imageInfo{};
+// imageInfo.sampler = m_sampler;
+// // TODO: Deal with that
+//
+// const Texture& texture = m_textures.at(m_models[0].getTextureID());
+// imageInfo.imageLayout = texture.getImage().getLayout();
+// imageInfo.imageView = texture.getImage().getImageView();
 
-        // VkWriteDescriptorSet descriptorWrite{};
-        // descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        // descriptorWrite.dstSet = m_descriptorSets[i];
-        // descriptorWrite.dstBinding = 0;
-        // descriptorWrite.dstArrayElement = 0;
-        // descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        // descriptorWrite.descriptorCount = 1;
-        // descriptorWrite.pBufferInfo = &bufferInfo;
+// VkWriteDescriptorSet descriptorWrite{};
+// descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+// descriptorWrite.dstSet = m_descriptorSets[i];
+// descriptorWrite.dstBinding = 0;
+// descriptorWrite.dstArrayElement = 0;
+// descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+// descriptorWrite.descriptorCount = 1;
+// descriptorWrite.pBufferInfo = &bufferInfo;
 
-        // descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        // descriptorWrites[1].dstSet = m_descriptorSets[i];
-        // descriptorWrites[1].dstBinding = 1;
-        // descriptorWrites[1].dstArrayElement = 0;
-        // descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        // descriptorWrites[1].descriptorCount = 1;
-        // descriptorWrites[1].pImageInfo = &imageInfo;
+// descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+// descriptorWrites[1].dstSet = m_descriptorSets[i];
+// descriptorWrites[1].dstBinding = 1;
+// descriptorWrites[1].dstArrayElement = 0;
+// descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+// descriptorWrites[1].descriptorCount = 1;
+// descriptorWrites[1].pImageInfo = &imageInfo;
 
-        // vkUpdateDescriptorSets(vkContext.getDevice(), 1, &descriptorWrite, 0, nullptr);
-    // }
+// vkUpdateDescriptorSets(vkContext.getDevice(), 1, &descriptorWrite, 0, nullptr);
+// }
 // }
 
 void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t imageIndex) const {
@@ -743,8 +710,20 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines.scene);
 
+    m_pipelines.skybox->bind(commandBuffer);
+
+    const Texture& skyTex = m_textures[m_skybox->getTextureID()];
+    const std::array descriptorSets{
+        m_camera->getDescriptorSet(),
+        skyTex.getDescriptorSet()
+    };
+
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, descriptorSets.size(),
+                            descriptorSets.data(), 0, nullptr);
+    m_skybox->draw(commandBuffer, m_pipelineLayout);
+
+    m_pipelines.scene->bind(commandBuffer);
     m_drawModels(commandBuffer);
     vkCmdEndRenderPass(commandBuffer);
 
@@ -752,23 +731,12 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
 }
 
 void VK::m_drawModels(VkCommandBuffer commandBuffer) const {
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
-                                &m_camera->getDescriptorSet(), 0, nullptr);
-
-    for (const auto& model: m_models) {
+    for (const auto& model : m_models) {
         const Texture& texture = m_textures[model.getTextureID()];
-
-        const std::array buffers = { model.getMesh().getVertexBuffer().buffer() };
-        constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
-
-        vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, model.getMesh().getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 1, 1,
                                 &texture.getDescriptorSet(), 0, nullptr);
 
-        const glm::mat4 constants = model.getTransform().getMatrix();
-        vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &constants);
-        vkCmdDrawIndexed(commandBuffer, model.getMesh().getIndices().size(), 1, 0, 0, 0);
+        model.draw(commandBuffer, m_pipelineLayout);
     }
 }
 
@@ -783,17 +751,22 @@ void VK::m_initVulkan() {
     m_createSwapChain();
     m_createImageViews();
     m_createRenderPass();
-    // m_createUniformBuffers();
     m_createDepthResources();
     m_createDescriptorSetLayout();
     m_createDescriptorPool();
 
-    m_textures.emplace_back("./assets/viking_room.png", m_descriptorPool, m_textureDescriptorSetLayout);
-    m_textures.emplace_back("./assets/skybox-test.png", m_descriptorPool, m_textureDescriptorSetLayout);
+    m_textures.emplace_back(std::vector{"./assets/viking_room.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
+    m_textures.emplace_back(std::vector{
+        "./assets/skybox/hl1/right.bmp",
+        "./assets/skybox/hl1/left.bmp",
+        "./assets/skybox/hl1/top.bmp",
+        "./assets/skybox/hl1/bottom.bmp",
+        "./assets/skybox/hl1/back.bmp",
+        "./assets/skybox/hl1/front.bmp",
+    }, m_descriptorPool, m_textureDescriptorSetLayout);
 
     m_models.emplace_back("./assets/viking_room.obj", m_textures[0].getID());
-    m_models.push_back(Cube(m_textures[1].getID()));
-    m_models[1].scale(glm::vec3(3.0f));
+    m_skybox = std::make_unique<Cube>(m_textures[1].getID());
 
     // m_createDescriptorSets();
     m_createGraphicsPipeline();
@@ -806,7 +779,6 @@ void VK::m_initVulkan() {
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
     m_camera = std::make_unique<Camera>(aspectRatio, m_descriptorPool, m_sceneDescriptorSetLayout);
     m_camera->setPosition({ 0.0f, 0.0f, 5.0f });
-    // m_camera->rotate(glm::radians(180.0f), { 0.0f, 1.0f, 0.0f });
 
     fmt::println("Good to go :)");
 }
@@ -822,16 +794,18 @@ void VK::m_destroyVulkan() const {
     vkDestroyDescriptorSetLayout(vkContext.getDevice(), m_textureDescriptorSetLayout, nullptr);
 
     m_depthImage->destroy();
-    for (const auto& texture: m_textures) {
+    for (const auto& texture : m_textures) {
         texture.destroy();
     }
 
-    // vkDestroySampler(vkContext.getDevice(), m_sampler, nullptr);
-    for (const auto& model: m_models) {
+    m_skybox->destroy();
+    for (const auto& model : m_models) {
         model.destroy();
     }
 
-    vkDestroyPipeline(vkContext.getDevice(), m_pipelines.scene, nullptr);
+    m_pipelines.scene->destroy();
+    m_pipelines.skybox->destroy();
+
     vkDestroyPipelineLayout(vkContext.getDevice(), m_pipelineLayout, nullptr);
     vkDestroyRenderPass(vkContext.getDevice(), m_renderPass, nullptr);
 

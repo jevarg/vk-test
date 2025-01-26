@@ -17,6 +17,8 @@ class Model : public Thing {
     [[nodiscard]]
     const Mesh& getMesh() const;
 
+    void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
+
    private:
     Texture::ID m_textureID;
     Mesh m_mesh;

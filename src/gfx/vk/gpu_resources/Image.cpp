@@ -3,21 +3,26 @@
 #include "gfx/vk/OneTimeCommand.h"
 #include "gfx/vk/vkutil.h"
 
-Image::Image(const VkExtent3D &extent, const VkFormat format, const VkImageTiling tiling, const VkImageUsageFlags usage,
-             const VkMemoryPropertyFlags properties, const VkImageAspectFlags aspectFlags)
-    : m_extent(extent), m_layout(VK_IMAGE_LAYOUT_UNDEFINED) {
+Image::Image(const VkExtent3D& extent, const VkFormat format, const VkImageTiling tiling, const VkImageUsageFlags usage,
+             const VkMemoryPropertyFlags properties, const VkImageAspectFlags aspectFlags,
+             const VkImageViewType viewType, const uint32_t mipLevels, const uint32_t layers)
+    : m_extent(extent), m_layout(VK_IMAGE_LAYOUT_UNDEFINED), m_mipLevels(mipLevels), m_layers(layers) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent = extent;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
+    imageInfo.mipLevels = m_mipLevels;
+    imageInfo.arrayLayers = m_layers;
     imageInfo.format = format;
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = m_layout;
     imageInfo.usage = usage;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (m_layers == 6) {
+        imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    }
 
     const VulkanContext& vkContext = VulkanContext::get();
 
@@ -29,7 +34,8 @@ Image::Image(const VkExtent3D &extent, const VkFormat format, const VkImageTilin
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = vkContext.getPhysicalDevice().findMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex =
+        vkContext.getPhysicalDevice().findMemoryType(memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(vkContext.getDevice(), &allocInfo, nullptr, &m_deviceMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
@@ -40,13 +46,13 @@ Image::Image(const VkExtent3D &extent, const VkFormat format, const VkImageTilin
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = m_image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.viewType = viewType;
     viewInfo.format = format;
     viewInfo.subresourceRange.aspectMask = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.levelCount = m_mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
+    viewInfo.subresourceRange.layerCount = m_layers;
 
     VK_CHECK("failed to create image view", vkCreateImageView(vkContext.getDevice(), &viewInfo, nullptr, &m_imageView));
 }
@@ -81,9 +87,9 @@ void Image::transitionLayout(const VkImageLayout newLayout) {
     }
 
     barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.levelCount = m_mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.layerCount = m_layers;
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
@@ -117,7 +123,7 @@ void Image::transitionLayout(const VkImageLayout newLayout) {
     m_layout = newLayout;
 }
 
-const VkExtent3D &Image::getExtent() const {
+const VkExtent3D& Image::getExtent() const {
     return m_extent;
 }
 

@@ -22,7 +22,7 @@ SDL_Window* InitSDL() {
         return nullptr;
     }
 
-    SDL_Window* window = SDL_CreateWindow("VKTest", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
+    SDL_Window* window = SDL_CreateWindow("VKTest", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 1024,
                                           SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
     if (window == nullptr || SDL_SetRelativeMouseMode(SDL_TRUE) != 0) {
         PrintSDLError();

@@ -48,6 +48,17 @@ const VkDeviceMemory& Buffer::getMemory() const {
     return m_bufferMemory;
 }
 
+void *Buffer::map() const {
+    void* ptr;
+    vkMapMemory(VulkanContext::get().getDevice(), m_bufferMemory, 0, m_size, 0, &ptr);
+
+    return ptr;
+}
+
+void Buffer::unmap() const {
+    vkUnmapMemory(VulkanContext::get().getDevice(), m_bufferMemory);
+}
+
 void Buffer::setMemory(const void* src, const VkDeviceSize offset, const VkMemoryMapFlags flags) const {
     const VkDevice& device = VulkanContext::get().getDevice();
     void* data;
@@ -68,12 +79,12 @@ void Buffer::copyTo(const Buffer& dst) const {
     vkCmdCopyBuffer(cmd.buffer, m_buffer, dst.buffer(), 1, &copyRegion);
 }
 
-void Buffer::copyTo(const Texture& texture) const {
+void Buffer::copyTo(const Texture& texture, const uint32_t layerCount) const {
     const OneTimeCommand cmd(VulkanContext::get().getGraphicsQueue());
 
     VkBufferImageCopy region{};
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.layerCount = 1;
+    region.imageSubresource.layerCount = layerCount;
     region.imageExtent = texture.getImage().getExtent();
 
     vkCmdCopyBufferToImage(cmd.buffer, m_buffer, texture.getImage().getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,

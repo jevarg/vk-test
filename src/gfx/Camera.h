@@ -35,6 +35,6 @@ class Camera : public Thing {
     glm::mat4 m_projection{};
 
     float m_speed = 0.1f;
-    float m_sensitivity = 0.5f;
+    float m_sensitivity = 1.0f;
 };
 

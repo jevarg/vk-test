@@ -13,10 +13,13 @@ class Shader {
 
     explicit Shader(const char *path, Type shaderType);
 
-    ~Shader();
+    void destroy() const;
 
     [[nodiscard]]
     const VkShaderModule &getModule() const;
+
+    [[nodiscard]]
+    const char* getEntryPoint() const;
 
    private:
     const char *m_filePath;
@@ -24,6 +27,7 @@ class Shader {
 
     std::vector<uint32_t> m_bytecode;
     VkShaderModule m_module = VK_NULL_HANDLE;
+    const char *m_entrypoint = "main";
 
     void m_compile(const std::string &glslString);
     void m_createModule();

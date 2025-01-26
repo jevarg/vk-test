@@ -10,11 +10,13 @@ class Texture {
    public:
     typedef size_t ID;
 
-    explicit Texture(const char* filename, const VkDescriptorPool& descriptorPool,
+    explicit Texture(const std::vector<const char*>& filenames, const VkDescriptorPool& descriptorPool,
                      const VkDescriptorSetLayout& descriptorSetLayout);
     Texture(Texture&& other) noexcept = default;
 
     void destroy() const;
+
+    // void bind(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
     [[nodiscard]]
     const Image& getImage() const;

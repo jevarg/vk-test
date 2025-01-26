@@ -37,10 +37,14 @@ add_executable(VKTest
         src/gfx/vk/gpu_resources/DepthImage.h
         src/gfx/vk/gpu_resources/Image.cpp
         src/gfx/vk/gpu_resources/Image.h
+        src/gfx/vk/gpu_resources/PhysicalDevice.cpp
+        src/gfx/vk/gpu_resources/PhysicalDevice.h
         src/gfx/vk/gpu_resources/Shader.cpp
         src/gfx/vk/gpu_resources/Shader.h
         src/gfx/vk/gpu_resources/Texture.cpp
         src/gfx/vk/gpu_resources/Texture.h
+        src/gfx/vk/pipeline/Pipeline.cpp
+        src/gfx/vk/pipeline/Pipeline.h
         src/gfx/vk/types/UniformBufferObject.h
         src/gfx/vk/types/Vertex.h
         src/gfx/vk/types/VulkanContext.h
@@ -58,12 +62,8 @@ add_executable(VKTest
         src/common/Thing.h
         src/input/Keyboard.h
         src/input/Mouse.h
-        src/gfx/vk/gpu_resources/PhysicalDevice.cpp
-        src/gfx/vk/gpu_resources/PhysicalDevice.h
         src/objects/prefabs/Cube.cpp
         src/objects/prefabs/Cube.h
-        src/gfx/vk/gpu_resources/Pipeline.cpp
-        src/gfx/vk/gpu_resources/Pipeline.h
 )
 
 target_include_directories(VKTest PRIVATE

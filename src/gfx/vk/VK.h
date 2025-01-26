@@ -9,6 +9,8 @@
 #include "gfx/Camera.h"
 #include "gpu_resources/DepthImage.h"
 #include "objects/Model.h"
+#include "objects/prefabs/Cube.h"
+#include "pipeline/Pipeline.h"
 
 class VK {
    public:
@@ -24,9 +26,9 @@ class VK {
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
 
-    struct Pipeline {
-        VkPipeline scene;
-        VkPipeline skybox;
+    struct Pipelines {
+        std::unique_ptr<Pipeline> scene;
+        std::unique_ptr<Pipeline> skybox;
     } m_pipelines;
 
     VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
@@ -46,6 +48,7 @@ class VK {
 
     std::vector<Texture> m_textures;
     std::vector<Model> m_models;
+    std::unique_ptr<Cube> m_skybox;
 
     std::unique_ptr<Camera> m_camera;
 
@@ -65,6 +68,7 @@ class VK {
 
     VkSurfaceFormatKHR m_chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR m_chooseSurfacePresentMode(const std::vector<VkPresentModeKHR>& availableModes);
+
     [[nodiscard]]
     VkExtent2D m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 

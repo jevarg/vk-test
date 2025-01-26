@@ -89,6 +89,7 @@ void VulkanContext::m_createLogicalDevice() {
     const QueueFamilyIndices &indices = m_physicalDevice->getQueueFamilyIndices();
     const std::vector requiredVKExtensions{
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        "VK_KHR_portability_subset"
     };
 
     // Queues
@@ -106,6 +107,7 @@ void VulkanContext::m_createLogicalDevice() {
     // Features
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
+    deviceFeatures.imageCubeArray = VK_TRUE;
 
     // Device creation
     VkDeviceCreateInfo deviceCreateInfo{};

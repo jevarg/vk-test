@@ -22,3 +22,16 @@ const Texture::ID &Model::getTextureID() const {
 const Mesh &Model::getMesh() const {
     return m_mesh;
 }
+
+void Model::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const {
+    const std::array buffers = { m_mesh.getVertexBuffer().buffer() };
+    constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
+
+    vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
+    vkCmdBindIndexBuffer(commandBuffer, m_mesh.getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
+
+    const glm::mat4 constants = m_transform.getMatrix();
+    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4),
+                       &constants);
+    vkCmdDrawIndexed(commandBuffer, m_mesh.getIndices().size(), 1, 0, 0, 0);
+}

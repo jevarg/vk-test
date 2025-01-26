@@ -21,12 +21,16 @@ Shader::Shader(const char *path, const Type shaderType) : m_filePath(path), m_ty
     m_createModule();
 }
 
-Shader::~Shader() {
+void Shader::destroy() const {
     vkDestroyShaderModule(VulkanContext::get().getDevice(), m_module, nullptr);
 }
 
 const VkShaderModule &Shader::getModule() const {
     return m_module;
+}
+
+const char* Shader::getEntryPoint() const {
+    return m_entrypoint;
 }
 
 void Shader::m_compile(const std::string &glslString) {
