@@ -529,8 +529,6 @@ void VK::m_createGraphicsPipeline() {
     depthStencil.depthWriteEnable = VK_FALSE;
     depthStencil.depthTestEnable = VK_FALSE;
 
-    rasterizer.cullMode = VK_CULL_MODE_NONE;
-    // rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     m_pipelines.skybox = std::make_unique<Pipeline>(
         Pipeline::Type::Graphics, "./shaders/skybox.vert", "./shaders/skybox.frag", vtxInputInfo, inputAssembly,
         viewportState, rasterizer, multisampling, colorBlending, depthStencil, m_pipelineLayout, m_renderPass);
@@ -605,22 +603,6 @@ void VK::m_createDepthResources() {
     m_depthImage->transitionLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-// void VK::m_createUniformBuffers() {
-//     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-//
-//     m_uniformBuffers.resize(maxInflightFrames);
-//     m_uniformBuffersMapped.resize(maxInflightFrames);
-//
-//     for (int i = 0; i < maxInflightFrames; ++i) {
-//         m_uniformBuffers[i] =
-//             std::make_unique<Buffer>(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-//                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-//         vkMapMemory(VulkanContext::get().getDevice(), m_uniformBuffers[i]->getMemory(), 0,
-//         m_uniformBuffers[i]->getSize(), 0,
-//                     &m_uniformBuffersMapped[i]);
-//     }
-// }
-
 void VK::m_createDescriptorPool() {
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -637,54 +619,6 @@ void VK::m_createDescriptorPool() {
     VK_CHECK("failed to create descriptor pool",
              vkCreateDescriptorPool(VulkanContext::get().getDevice(), &poolInfo, nullptr, &m_descriptorPool));
 }
-
-// void VK::m_createDescriptorSets() {
-//     const VulkanContext& vkContext = VulkanContext::get();
-//     const std::vector layouts(maxInflightFrames, m_descriptorSetLayout);
-//     VkDescriptorSetAllocateInfo allocInfo{};
-//     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-//     allocInfo.descriptorPool = m_descriptorPool;
-//     allocInfo.descriptorSetCount = layouts.size();
-//     allocInfo.pSetLayouts = layouts.data();
-//
-//     m_descriptorSets.resize(maxInflightFrames);
-//     VK_CHECK("failed to allocate descriptor sets",
-//              vkAllocateDescriptorSets(vkContext.getDevice(), &allocInfo, m_descriptorSets.data()));
-
-// for (int i = 0; i < maxInflightFrames; ++i) {
-// VkDescriptorBufferInfo bufferInfo{};
-// bufferInfo.buffer = m_uniformBuffers[i]->buffer();
-// bufferInfo.offset = 0;
-// bufferInfo.range = sizeof(UniformBufferObject);
-
-// VkDescriptorImageInfo imageInfo{};
-// imageInfo.sampler = m_sampler;
-// // TODO: Deal with that
-//
-// const Texture& texture = m_textures.at(m_models[0].getTextureID());
-// imageInfo.imageLayout = texture.getImage().getLayout();
-// imageInfo.imageView = texture.getImage().getImageView();
-
-// VkWriteDescriptorSet descriptorWrite{};
-// descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-// descriptorWrite.dstSet = m_descriptorSets[i];
-// descriptorWrite.dstBinding = 0;
-// descriptorWrite.dstArrayElement = 0;
-// descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-// descriptorWrite.descriptorCount = 1;
-// descriptorWrite.pBufferInfo = &bufferInfo;
-
-// descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-// descriptorWrites[1].dstSet = m_descriptorSets[i];
-// descriptorWrites[1].dstBinding = 1;
-// descriptorWrites[1].dstArrayElement = 0;
-// descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-// descriptorWrites[1].descriptorCount = 1;
-// descriptorWrites[1].pImageInfo = &imageInfo;
-
-// vkUpdateDescriptorSets(vkContext.getDevice(), 1, &descriptorWrite, 0, nullptr);
-// }
-// }
 
 void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t imageIndex) const {
     VkCommandBufferBeginInfo beginInfo{};
@@ -723,8 +657,8 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
                             descriptorSets.data(), 0, nullptr);
     m_skybox->draw(commandBuffer, m_pipelineLayout);
 
-    m_pipelines.scene->bind(commandBuffer);
-    m_drawModels(commandBuffer);
+    // m_pipelines.scene->bind(commandBuffer);
+    // m_drawModels(commandBuffer);
     vkCmdEndRenderPass(commandBuffer);
 
     VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));
@@ -821,34 +755,3 @@ void VK::m_destroyVulkan() const {
 
     fmt::println("Destroyed vk resources");
 }
-
-// void VK::m_createSampler() {
-//     const VulkanContext& vkContext = VulkanContext::get();
-//
-//     VkPhysicalDeviceProperties properties{};
-//     vkGetPhysicalDeviceProperties(vkContext.getPhysicalDevice().getUnderlying(), &properties);
-//
-//     VkSamplerCreateInfo samplerInfo{};
-//     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-//     samplerInfo.magFilter = VK_FILTER_NEAREST;
-//     samplerInfo.minFilter = VK_FILTER_NEAREST;
-//
-//     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-//     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-//     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-//
-//     samplerInfo.anisotropyEnable = VK_TRUE;
-//     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-//     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-//     samplerInfo.unnormalizedCoordinates = VK_FALSE;
-//
-//     samplerInfo.compareEnable = VK_FALSE;
-//     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-//
-//     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-//     samplerInfo.mipLodBias = 0.0f;
-//     samplerInfo.minLod = 0.0f;
-//     samplerInfo.maxLod = 0.0f;
-//
-//     VK_CHECK("failed to create sampler", vkCreateSampler(vkContext.getDevice(), &samplerInfo, nullptr, &m_sampler));
-// }

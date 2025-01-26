@@ -31,11 +31,11 @@ const std::vector<uint32_t> indices = {
     // -y
     6, 1, 0, 0, 5, 6,
     // +y
-    7, 2, 3, 3, 4, 7,
+    2, 7, 4, 4, 3, 2,
     // -z
-    5, 0, 3, 3, 4, 5,
+    0, 3, 4, 4, 5, 0,
     // +z
-    6, 1, 2, 2, 7, 6,
+    6, 7, 2, 2, 1, 6,
 };
 
 Cube::Cube(const Texture::ID textureID) : Model(Mesh(vertices, indices), textureID) {}
