@@ -9,14 +9,22 @@ find_package(SDL2 REQUIRED)
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 
+set(SHADERC_COMBINED_LIB_NAME "shaderc_combined")
+set(SHADERC_UTIL_LIB_NAME "shaderc_util")
+
+if (WIN AND DEBUG)
+    set(SHADERC_COMBINED_LIB_NAME "{$SHADERC_COMBINED_LIB_NAME}d")
+    set(SHADERC_UTIL_LIB_NAME "{$SHADERC_UTIL_LIB_NAME}d")
+endif ()
+
 find_library(SHADERC_COMBINED_LIB
-        NAMES shaderc_combinedd
+        NAMES ${SHADERC_COMBINED_LIB_NAME}
         HINTS ${VULKAN_SDK}/Lib
         REQUIRED
 )
 
 find_library(SHADERC_UTIL_LIB
-        NAMES shaderc_utild
+        NAMES ${SHADERC_UTIL_LIB_NAME}
         HINTS ${VULKAN_SDK}/Lib
         REQUIRED
 )
