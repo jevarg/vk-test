@@ -6,8 +6,9 @@
 
 class Model : public Thing {
    public:
-    explicit Model(const char* meshPath, Texture::ID textureID);
-    Model(Mesh mesh, Texture::ID textureID);
+    explicit Model(const char* filePath);
+    // Model(const char* meshPath, Texture::ID textureID);
+    // Model(Mesh mesh, Texture::ID textureID);
 
     void destroy() const;
 
@@ -15,11 +16,13 @@ class Model : public Thing {
     const Texture::ID& getTextureID() const;
 
     [[nodiscard]]
-    const Mesh& getMesh() const;
+    const std::vector<std::shared_ptr<Mesh>>& getMeshes() const;
 
     void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
    private:
     Texture::ID m_textureID;
-    Mesh m_mesh;
+
+    std::vector<std::shared_ptr<Mesh>> m_meshes;
+    // std::vector<std::shared_ptr<Materials>> m_materials;
 };

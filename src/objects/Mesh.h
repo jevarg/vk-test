@@ -8,9 +8,9 @@
 
 class Mesh {
    public:
-    explicit Mesh(const char* modelPath);
+    // explicit Mesh(const char* modelPath);
 
-    Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+    Mesh(const char* name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
     Mesh(Mesh&& other) noexcept = default;
 
     void destroy() const;
@@ -28,13 +28,14 @@ class Mesh {
     const std::vector<uint32_t>& getIndices() const;
 
    private:
+    std::string m_name;
     std::unique_ptr<Buffer> m_vertexBuffer;
     std::unique_ptr<Buffer> m_indexBuffer;
+
+    std::vector<Vertex> m_vertices;
+    std::vector<uint32_t> m_indices;
 
     void m_createVertexBuffer();
     void m_createIndexBuffer();
 
-   protected:
-    std::vector<Vertex> m_vertices;
-    std::vector<uint32_t> m_indices;
 };

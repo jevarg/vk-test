@@ -2,6 +2,7 @@
 #include <fmt/base.h>
 
 #include "gfx/vk/VK.h"
+#include "objects/Model.h"
 
 void PrintSDLError() {
     fmt::println(stderr, "Error: {}", SDL_GetError());

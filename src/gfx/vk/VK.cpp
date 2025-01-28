@@ -647,18 +647,18 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
 
     m_pipelines.skybox->bind(commandBuffer);
 
-    const Texture& skyTex = m_textures[m_skybox->getTextureID()];
+    // const Texture& skyTex = m_textures[m_skybox->getTextureID()];
     const std::array descriptorSets{
         m_camera->getDescriptorSet(),
-        skyTex.getDescriptorSet()
+        // skyTex.getDescriptorSet()
     };
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, descriptorSets.size(),
                             descriptorSets.data(), 0, nullptr);
-    m_skybox->draw(commandBuffer, m_pipelineLayout);
+    // m_skybox->draw(commandBuffer, m_pipelineLayout);
 
-    // m_pipelines.scene->bind(commandBuffer);
-    // m_drawModels(commandBuffer);
+    m_pipelines.scene->bind(commandBuffer);
+    m_drawModels(commandBuffer);
     vkCmdEndRenderPass(commandBuffer);
 
     VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));
@@ -699,8 +699,10 @@ void VK::m_initVulkan() {
         "./assets/skybox/hl1/front.bmp",
     }, m_descriptorPool, m_textureDescriptorSetLayout);
 
-    m_models.emplace_back("./assets/viking_room.obj", m_textures[0].getID());
-    m_skybox = std::make_unique<Cube>(m_textures[1].getID());
+    // m_models.emplace_back("./assets/viking_room.obj", m_textures[0].getID());
+    // m_models.emplace_back("./assets/viking_room.obj", m_textures[0].getID());
+    m_models.emplace_back("./assets/models/avocado/Avocado.gltf");
+    // m_skybox = std::make_unique<Cube>(m_textures[1].getID());
 
     // m_createDescriptorSets();
     m_createGraphicsPipeline();
@@ -732,7 +734,7 @@ void VK::m_destroyVulkan() const {
         texture.destroy();
     }
 
-    m_skybox->destroy();
+    // m_skybox->destroy();
     for (const auto& model : m_models) {
         model.destroy();
     }
