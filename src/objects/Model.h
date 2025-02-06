@@ -3,10 +3,11 @@
 #include "Mesh.h"
 #include "common/Thing.h"
 #include "gfx/vk/gpu_resources/Texture.h"
+#include "loaders/GLTFLoader.h"
 
 class Model : public Thing {
    public:
-    explicit Model(const char* filePath);
+    explicit Model(const GLTFLoader& loader);
     // Model(const char* meshPath, Texture::ID textureID);
     // Model(Mesh mesh, Texture::ID textureID);
 

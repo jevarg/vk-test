@@ -9,7 +9,7 @@
 
 Camera::Camera(const float aspectRatio, const VkDescriptorPool& descriptorPool,
                const VkDescriptorSetLayout& descriptorSetLayout) {
-    m_projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 1000.0f);
+    m_projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.01f, 1000.0f);
 
     // TODO: change that
     m_projection[1][1] *= -1;  // inverting y because vulkan != gl
@@ -44,20 +44,25 @@ const VkDescriptorSet& Camera::getDescriptorSet() const {
 }
 
 void Camera::update(const float delta) {
+    float speed = m_speed;
+    if (Keyboard::isModPressed(KMOD_SHIFT)) {
+        speed *= 0.07;
+    }
+
     if (Keyboard::isKeyPressed(SDL_SCANCODE_W)) {
-        localTranslate({ 0.0f, 0.0f, -m_speed });
+        localTranslate({ 0.0f, 0.0f, -speed });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_S)) {
-        localTranslate({ 0.0f, 0.0f, m_speed });
+        localTranslate({ 0.0f, 0.0f, speed });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_A)) {
-        localTranslate({ -m_speed, 0.0f, 0.0f });
+        localTranslate({ -speed, 0.0f, 0.0f });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_D)) {
-        localTranslate({ m_speed, 0.0f, 0.0f });
+        localTranslate({ speed, 0.0f, 0.0f });
     }
 
     const glm::vec2& mouseDelta = Mouse::getDelta();

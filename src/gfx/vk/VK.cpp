@@ -51,6 +51,7 @@ void VK::m_mainLoop() {
         Mouse::update();
 
         m_camera->update(0);
+        m_models[0].rotate(0.02, {0, 1, 0});
 
         m_drawFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -689,7 +690,8 @@ void VK::m_initVulkan() {
     m_createDescriptorSetLayout();
     m_createDescriptorPool();
 
-    m_textures.emplace_back(std::vector{"./assets/viking_room.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
+    m_textures.emplace_back(std::vector{"./assets/models/avocado/Avocado_baseColor.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
+    // m_textures.emplace_back(std::vector{"./assets/viking_room.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
     m_textures.emplace_back(std::vector{
         "./assets/skybox/hl1/right.bmp",
         "./assets/skybox/hl1/left.bmp",
@@ -699,9 +701,8 @@ void VK::m_initVulkan() {
         "./assets/skybox/hl1/front.bmp",
     }, m_descriptorPool, m_textureDescriptorSetLayout);
 
-    // m_models.emplace_back("./assets/viking_room.obj", m_textures[0].getID());
-    // m_models.emplace_back("./assets/viking_room.obj", m_textures[0].getID());
-    m_models.emplace_back("./assets/models/avocado/Avocado.gltf");
+    m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
+    // m_models.emplace_back("./assets/models/triangles/SimpleMeshes.gltf");
     // m_skybox = std::make_unique<Cube>(m_textures[1].getID());
 
     // m_createDescriptorSets();
@@ -714,7 +715,7 @@ void VK::m_initVulkan() {
     const float aspectRatio =
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
     m_camera = std::make_unique<Camera>(aspectRatio, m_descriptorPool, m_sceneDescriptorSetLayout);
-    m_camera->setPosition({ 0.0f, 0.0f, 5.0f });
+    m_camera->setPosition({ 0.0f, 0.0f, 0.2f });
 
     fmt::println("Good to go :)");
 }

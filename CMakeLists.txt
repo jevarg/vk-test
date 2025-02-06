@@ -66,12 +66,15 @@ add_executable(VKTest
         src/objects/prefabs/Plane.h
         src/objects/Mesh.cpp
         src/objects/Mesh.h
+        src/objects/loaders/GLTFLoader.cpp
+        src/objects/loaders/GLTFLoader.h
         src/common/Transform.h
         src/common/Thing.h
         src/input/Keyboard.h
         src/input/Mouse.h
         src/objects/prefabs/Cube.cpp
         src/objects/prefabs/Cube.h
+        src/objects/loaders/GLTF.h
 )
 
 target_include_directories(VKTest PRIVATE
