@@ -3,8 +3,11 @@
 #include <fmt/base.h>
 
 #include <fstream>
+#include <iostream>
 #include <json.hpp>
 #include <sstream>
+
+#include "gfx/vk/types/ModelConstants.h"
 
 using json = nlohmann::json;
 
@@ -122,8 +125,7 @@ using json = nlohmann::json;
 //
 // Model::Model(Mesh mesh, const Texture::ID textureID) : m_textureID(textureID), m_mesh(std::move(mesh)) {}
 
-Model::Model(const GLTFLoader& loader): m_textureID(0), m_meshes(loader.meshes) {
-}
+Model::Model(const GLTFLoader& loader) : m_textureID(0), m_meshes(loader.meshes) {}
 
 void Model::destroy() const {
     for (const auto& mesh : m_meshes) {
@@ -145,15 +147,21 @@ const std::vector<std::shared_ptr<Mesh>>& Model::getMeshes() const {
 
 void Model::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const {
     // for (const auto& mesh : m_meshes) {
-        const std::array buffers = { m_meshes[0]->getVertexBuffer().buffer() };
-        constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
+    const std::array buffers = { m_meshes[0]->getVertexBuffer().buffer() };
+    constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
 
-        vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, m_meshes[0]->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
+    vkCmdBindIndexBuffer(commandBuffer, m_meshes[0]->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
 
-        const glm::mat4 constants = m_transform.getMatrix();
-        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4),
-                           &constants);
-        vkCmdDrawIndexed(commandBuffer, m_meshes[0]->getIndices().size(), 1, 0, 0, 0);
+    const glm::mat4 modelMatrix = m_transform.getMatrix();
+    const glm::mat4 normalMatrix = m_transform.getNormalMatrix(modelMatrix);
+    const ModelConstants constants{
+        modelMatrix,
+        normalMatrix,
+    };
+
+    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
+                       &constants);
+    vkCmdDrawIndexed(commandBuffer, m_meshes[0]->getIndices().size(), 1, 0, 0, 0);
     // }
 }

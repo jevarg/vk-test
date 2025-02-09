@@ -39,7 +39,7 @@ GLTFLoader::GLTFLoader(const char* filePath) {
                 vertices[i].pos = glm::make_vec3(&rawPositions[i * 3]);
                 vertices[i].normal = glm::make_vec3(&rawNormals[i * 3]);
                 vertices[i].texCoord = glm::make_vec2(&rawTexCoords[i * 2]);
-                vertices[i].color = { 1, 1, 1 };
+                vertices[i].color = { 1, 1, 1 }; // TODO: is this ok?
             }
 
             const auto& rawIndices = std::get<std::vector<uint16_t>>(indicesPrimitive.data);

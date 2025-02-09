@@ -16,6 +16,7 @@
 #include "input/Mouse.h"
 #include "objects/prefabs/Cube.h"
 #include "objects/prefabs/Plane.h"
+#include "types/ModelConstants.h"
 #include "types/Vertex.h"
 #include "vkutil.h"
 
@@ -509,7 +510,7 @@ void VK::m_createGraphicsPipeline() {
     VkPushConstantRange pushConstant{};
     pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     pushConstant.offset = 0;
-    pushConstant.size = sizeof(glm::mat4);
+    pushConstant.size = sizeof(ModelConstants);
 
     const VkDescriptorSetLayout layouts[]{ m_sceneDescriptorSetLayout, m_textureDescriptorSetLayout };
 
