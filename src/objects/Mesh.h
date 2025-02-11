@@ -10,7 +10,7 @@ class Mesh {
    public:
     // explicit Mesh(const char* modelPath);
 
-    Mesh(const char* name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+    Mesh(std::string&& name, std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices);
     Mesh(Mesh&& other) noexcept = default;
 
     void destroy() const;

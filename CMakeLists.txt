@@ -58,23 +58,26 @@ add_executable(VKTest
         src/gfx/vk/types/VulkanContext.h
         src/gfx/vk/types/VulkanContext.cpp
 
+        src/objects/Mesh.cpp
+        src/objects/Mesh.h
         src/objects/Model.cpp
         src/objects/Model.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
+
+        src/objects/loaders/gltf/GLTF.h
+        src/objects/loaders/gltf/GLTFLoader.cpp
+        src/objects/loaders/gltf/GLTFLoader.h
+
         src/objects/prefabs/Plane.cpp
         src/objects/prefabs/Plane.h
-        src/objects/Mesh.cpp
-        src/objects/Mesh.h
-        src/objects/loaders/GLTFLoader.cpp
-        src/objects/loaders/GLTFLoader.h
+
         src/common/Transform.h
         src/common/Thing.h
         src/input/Keyboard.h
         src/input/Mouse.h
         src/objects/prefabs/Cube.cpp
         src/objects/prefabs/Cube.h
-        src/objects/loaders/GLTF.h
         src/gfx/vk/types/ModelConstants.h
 )
 

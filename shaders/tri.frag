@@ -28,8 +28,4 @@ void main() {
     float diffuse = max(dot(normal, lightDir), 0.0);
 
     outColor = (ambient + diffuse) * texColor;
-//    outColor = ambient * texColor;
-
-//    outColor = vec4(1, 1, 1, 1);
-//    outColor *= vec4(I, I, I, 1);
 }

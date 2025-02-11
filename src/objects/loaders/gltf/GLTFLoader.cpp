@@ -23,7 +23,8 @@ GLTFLoader::GLTFLoader(const char* filePath) {
 
         uint64_t meshId = node["mesh"];
         auto gltfMesh = m_gltf["meshes"][meshId];
-        const std::string meshName = gltfMesh.value("name", "unnamed");
+
+        std::string meshName = gltfMesh.value("name", "unnamed");
         for (const auto& primitive : gltfMesh["primitives"]) {
             const GLTF::Primitive indicesPrimitive = getPrimitiveBuffer(primitive, "indices");
             const GLTF::Primitive positionsPrimitive = getPrimitiveBuffer(primitive["attributes"], "POSITION");
@@ -37,9 +38,16 @@ GLTFLoader::GLTFLoader(const char* filePath) {
             std::vector<Vertex> vertices(positionsPrimitive.count);
             for (int i = 0; i < positionsPrimitive.count; ++i) {
                 vertices[i].pos = glm::make_vec3(&rawPositions[i * 3]);
+                if (node.contains("translation")) {
+                    std::vector<float> translation = node["translation"];
+                    vertices[i].pos.x += translation[0];
+                    vertices[i].pos.y += translation[1];
+                    vertices[i].pos.z += translation[2];
+                }
+
                 vertices[i].normal = glm::make_vec3(&rawNormals[i * 3]);
                 vertices[i].texCoord = glm::make_vec2(&rawTexCoords[i * 2]);
-                vertices[i].color = { 1, 1, 1 }; // TODO: is this ok?
+                vertices[i].color = { 1, 1, 1 };
             }
 
             const auto& rawIndices = std::get<std::vector<uint16_t>>(indicesPrimitive.data);
@@ -48,10 +56,7 @@ GLTFLoader::GLTFLoader(const char* filePath) {
                 indices[i] = rawIndices[i];
             }
 
-            auto mesh = std::make_shared<Mesh>("", vertices, indices);
-            meshes.emplace_back(mesh);
-
-            return;  // TODO: more meshes
+            meshes.emplace_back(std::move(meshName), std::move(vertices), std::move(indices));
         }
     }
 }
@@ -80,55 +85,62 @@ GLTF::Primitive GLTFLoader::getPrimitiveBuffer(const nlohmann::json& primitive, 
     const json accessor = m_gltf["accessors"][accessorId];
     const uint64_t bufferViewId = accessor["bufferView"];
     const uint64_t count = accessor["count"];
+    const uint64_t bufferViewOffset = accessor.value("byteOffset", 0);
 
     const json bufferView = m_gltf["bufferViews"][bufferViewId];
     const uint64_t bufferId = bufferView["buffer"];
-    const uint64_t offset = bufferView.value("byteOffset", 0);
-    const uint64_t byteSize = bufferView["byteLength"];
+    const uint64_t bufferViewStart = bufferView.value("byteOffset", 0);
+
+    const uint64_t offset = bufferViewOffset + bufferViewStart;
 
     const std::string type = accessor["type"];
     const GLTF::DataType dataType = GLTF::dataTypeMap.at(type);
 
     GLTF::Primitive p;
     p.count = count;
-    p.byteSize = byteSize;
 
     const uint8_t* buffer = m_files.buffers[bufferId].data();
     const GLTF::ComponentType componentType = accessor["componentType"];
     switch (componentType) {
         case GLTF::ComponentType::BYTE: {
+            p.byteSize = count * dataType.componentCount * sizeof(int8_t);
             std::vector<int8_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
+            std::memcpy(values.data(), &buffer[offset], p.byteSize);
             p.data = std::move(values);
             break;
         }
         case GLTF::ComponentType::UNSIGNED_BYTE: {
+            p.byteSize = count * dataType.componentCount * sizeof(uint8_t);
             std::vector<uint8_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
+            std::memcpy(values.data(), &buffer[offset], p.byteSize);
             p.data = std::move(values);
             break;
         }
         case GLTF::ComponentType::SHORT: {
+            p.byteSize = count * dataType.componentCount * sizeof(int16_t);
             std::vector<int16_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
+            std::memcpy(values.data(), &buffer[offset], p.byteSize);
             p.data = std::move(values);
             break;
         }
         case GLTF::ComponentType::UNSIGNED_SHORT: {
+            p.byteSize = count * dataType.componentCount * sizeof(uint16_t);
             std::vector<uint16_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
+            std::memcpy(values.data(), &buffer[offset], p.byteSize);
             p.data = std::move(values);
             break;
         }
         case GLTF::ComponentType::UNSIGNED_INT: {
+            p.byteSize = count * dataType.componentCount * sizeof(uint32_t);
             std::vector<uint32_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
+            std::memcpy(values.data(), &buffer[offset], p.byteSize);
             p.data = std::move(values);
             break;
         }
         case GLTF::ComponentType::FLOAT: {
+            p.byteSize = count * dataType.componentCount * sizeof(float);
             std::vector<float> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
+            std::memcpy(values.data(), &buffer[offset], p.byteSize);
             p.data = std::move(values);
             break;
         }

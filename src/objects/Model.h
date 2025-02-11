@@ -3,11 +3,11 @@
 #include "Mesh.h"
 #include "common/Thing.h"
 #include "gfx/vk/gpu_resources/Texture.h"
-#include "loaders/GLTFLoader.h"
+#include "loaders/gltf/GLTFLoader.h"
 
 class Model : public Thing {
    public:
-    explicit Model(const GLTFLoader& loader);
+    explicit Model(GLTFLoader&& loader);
     // Model(const char* meshPath, Texture::ID textureID);
     // Model(Mesh mesh, Texture::ID textureID);
 
@@ -17,13 +17,13 @@ class Model : public Thing {
     const Texture::ID& getTextureID() const;
 
     [[nodiscard]]
-    const std::vector<std::shared_ptr<Mesh>>& getMeshes() const;
+    const std::vector<Mesh>& getMeshes() const;
 
     void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
    private:
     Texture::ID m_textureID;
 
-    std::vector<std::shared_ptr<Mesh>> m_meshes;
+    std::vector<Mesh> m_meshes;
     // std::vector<std::shared_ptr<Materials>> m_materials;
 };

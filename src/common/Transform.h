@@ -21,8 +21,7 @@ struct Transform {
 
     [[nodiscard]]
     static glm::mat4 getNormalMatrix(const glm::mat4& model) {
-        const glm::mat3 model3(model);
-        return inverseTranspose(model3);
+        return inverseTranspose(model);
     }
 
     void rotate(const float angle, const glm::vec3& axis) {

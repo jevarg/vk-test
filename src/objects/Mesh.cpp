@@ -46,10 +46,8 @@
 //     m_createIndexBuffer();
 // }
 
-Mesh::Mesh(const char* name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices): m_name(name) {
-    m_vertices = vertices;
-    m_indices = indices;
-
+Mesh::Mesh(std::string&& name, std::vector<Vertex>&& vertices, std::vector<uint32_t>&& indices)
+    : m_name(name), m_vertices(vertices), m_indices(indices) {
     m_createVertexBuffer();
     m_createIndexBuffer();
 }
@@ -81,7 +79,6 @@ void Mesh::m_createIndexBuffer() {
     m_indexBuffer =
         std::make_unique<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
 
     const VulkanContext& vkContext = VulkanContext::get();
     void* data;

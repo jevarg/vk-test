@@ -52,7 +52,7 @@ void VK::m_mainLoop() {
         Mouse::update();
 
         m_camera->update(0);
-        m_models[0].rotate(0.02, {0, 1, 0});
+        // m_models[0].rotate(0.02, {0, 1, 0});
 
         m_drawFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -703,7 +703,7 @@ void VK::m_initVulkan() {
     }, m_descriptorPool, m_textureDescriptorSetLayout);
 
     m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
-    // m_models.emplace_back("./assets/models/triangles/SimpleMeshes.gltf");
+    // m_models.emplace_back(GLTFLoader("./assets/models/triangles/SimpleMeshes.gltf"));
     // m_skybox = std::make_unique<Cube>(m_textures[1].getID());
 
     // m_createDescriptorSets();
