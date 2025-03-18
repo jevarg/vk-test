@@ -123,7 +123,9 @@ using json = nlohmann::json;
 //     fmt::println("Loaded model: {} ({} vertices)", meshPath, m_mesh.getIndices().size());
 // }
 //
-// Model::Model(Mesh mesh, const Texture::ID textureID) : m_textureID(textureID), m_mesh(std::move(mesh)) {}
+Model::Model(Mesh mesh, const Texture::ID textureID) : m_textureID(textureID) {
+    m_meshes.push_back(std::make_shared<Mesh>(std::move(mesh)));
+}
 
 Model::Model(const GLTFLoader& loader) : m_textureID(0), m_meshes(loader.meshes) {}
 
@@ -154,7 +156,7 @@ void Model::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& p
     vkCmdBindIndexBuffer(commandBuffer, m_meshes[0]->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
 
     const glm::mat4 modelMatrix = m_transform.getMatrix();
-    const glm::mat4 normalMatrix = m_transform.getNormalMatrix(modelMatrix);
+    const glm::mat4 normalMatrix = Transform::getNormalMatrix(modelMatrix);
     const ModelConstants constants{
         modelMatrix,
         normalMatrix,

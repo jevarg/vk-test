@@ -5,13 +5,13 @@ constexpr float uvY = 1.0f / 3;
 
 const std::vector<Vertex> vertices = {
     { { -1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } },
-    {  { -1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
-    {   { -1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
-    {  { -1.0f, 1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } },
-    {   { 1.0f, 1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } },
-    {  { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } },
-    {   { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
-    {    { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
+    { { -1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
+    { { -1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
+    { { -1.0f, 1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } },
+    { { 1.0f, 1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } },
+    { { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f } },
+    { { 1.0f, -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
+    { { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
 };
 
 //    .3------4
@@ -38,4 +38,4 @@ const std::vector<uint32_t> indices = {
     6, 7, 2, 2, 1, 6,
 };
 
-// Cube::Cube(const Texture::ID textureID) : Model(Mesh(vertices, indices), textureID) {}
+Cube::Cube(const Texture::ID textureID) : Model(Mesh("Cube", vertices, indices), textureID) {}

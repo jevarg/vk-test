@@ -52,7 +52,7 @@ void VK::m_mainLoop() {
         Mouse::update();
 
         m_camera->update(0);
-        m_models[0].rotate(0.02, {0, 1, 0});
+        // m_models[0].rotate(0.02, { 0, 1, 0 });
 
         m_drawFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -120,9 +120,9 @@ void VK::m_drawFrame() {
 }
 
 bool VK::m_setupVVL(const std::vector<const char*>& requestedLayers) const {
-#ifdef NDEBUG
+    #ifdef NDEBUG
     return false;
-#endif
+    #endif
     fmt::println("Setting up VVL");
 
     uint32_t layersCount = 0;
@@ -134,8 +134,8 @@ bool VK::m_setupVVL(const std::vector<const char*>& requestedLayers) const {
 
     for (const auto& requestedLayer : requestedLayers) {
         if (std::ranges::find_if(availableLayers, [&requestedLayer](const auto& availableLayer) {
-                return strcmp(availableLayer.layerName, requestedLayer) == 0;
-            }) == availableLayers.end()) {
+            return strcmp(availableLayer.layerName, requestedLayer) == 0;
+        }) == availableLayers.end()) {
             throw std::runtime_error(fmt::format("Failed to find requested layer '{}'", requestedLayer));
         }
     }
@@ -221,7 +221,7 @@ VkPresentModeKHR VK::m_chooseSurfacePresentMode(const std::vector<VkPresentModeK
         }
     }
 
-    return VK_PRESENT_MODE_FIFO_KHR;  // VSync
+    return VK_PRESENT_MODE_FIFO_KHR; // VSync
 }
 
 VkExtent2D VK::m_chooseSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities) const {
@@ -365,7 +365,7 @@ void VK::m_createRenderPass() {
 
     // Depth attachment
     VkAttachmentDescription depthAttachment{};
-    depthAttachment.format = VK_FORMAT_D32_SFLOAT;  // TODO: findDepthFormat();
+    depthAttachment.format = VK_FORMAT_D32_SFLOAT; // TODO: findDepthFormat();
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -421,7 +421,7 @@ void VK::m_createDescriptorSetLayout() {
 
     VK_CHECK("failed to create scene descriptor set layout",
              vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr,
-                                         &m_sceneDescriptorSetLayout));
+                 &m_sceneDescriptorSetLayout));
 
     VkDescriptorSetLayoutBinding textureLayoutBinding{};
     textureLayoutBinding.binding = 0;
@@ -432,7 +432,7 @@ void VK::m_createDescriptorSetLayout() {
     layoutInfo.pBindings = &textureLayoutBinding;
     VK_CHECK("failed to create texture descriptor set layout",
              vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr,
-                                         &m_textureDescriptorSetLayout));
+                 &m_textureDescriptorSetLayout));
 }
 
 void VK::m_createGraphicsPipeline() {
@@ -616,7 +616,7 @@ void VK::m_createDescriptorPool() {
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = 3;  // TODO: Do that
+    poolInfo.maxSets = 3; // TODO: Do that
 
     VK_CHECK("failed to create descriptor pool",
              vkCreateDescriptorPool(VulkanContext::get().getDevice(), &poolInfo, nullptr, &m_descriptorPool));
@@ -649,15 +649,15 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
 
     m_pipelines.skybox->bind(commandBuffer);
 
-    // const Texture& skyTex = m_textures[m_skybox->getTextureID()];
+    const Texture& skyTex = m_textures[m_skybox->getTextureID()];
     const std::array descriptorSets{
         m_camera->getDescriptorSet(),
-        // skyTex.getDescriptorSet()
+        skyTex.getDescriptorSet()
     };
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, descriptorSets.size(),
                             descriptorSets.data(), 0, nullptr);
-    // m_skybox->draw(commandBuffer, m_pipelineLayout);
+    m_skybox->draw(commandBuffer, m_pipelineLayout);
 
     m_pipelines.scene->bind(commandBuffer);
     m_drawModels(commandBuffer);
@@ -691,20 +691,22 @@ void VK::m_initVulkan() {
     m_createDescriptorSetLayout();
     m_createDescriptorPool();
 
-    m_textures.emplace_back(std::vector{"./assets/models/avocado/Avocado_baseColor.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
+    m_textures.emplace_back(std::vector{ "./assets/models/avocado/avocado_baseColor.png" }, m_descriptorPool,
+                            m_textureDescriptorSetLayout);
     // m_textures.emplace_back(std::vector{"./assets/viking_room.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
     m_textures.emplace_back(std::vector{
-        "./assets/skybox/hl1/right.bmp",
-        "./assets/skybox/hl1/left.bmp",
-        "./assets/skybox/hl1/top.bmp",
-        "./assets/skybox/hl1/bottom.bmp",
-        "./assets/skybox/hl1/back.bmp",
-        "./assets/skybox/hl1/front.bmp",
-    }, m_descriptorPool, m_textureDescriptorSetLayout);
+                                "./assets/skybox/hl1/right.bmp",
+                                "./assets/skybox/hl1/left.bmp",
+                                "./assets/skybox/hl1/top.bmp",
+                                "./assets/skybox/hl1/bottom.bmp",
+                                "./assets/skybox/hl1/back.bmp",
+                                "./assets/skybox/hl1/front.bmp",
+                            }, m_descriptorPool, m_textureDescriptorSetLayout);
 
     m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
+    m_models[0].rotate(3.14116, { 0, 1, 0 });
     // m_models.emplace_back("./assets/models/triangles/SimpleMeshes.gltf");
-    // m_skybox = std::make_unique<Cube>(m_textures[1].getID());
+    m_skybox = std::make_unique<Cube>(m_textures[1].getID());
 
     // m_createDescriptorSets();
     m_createGraphicsPipeline();
@@ -736,7 +738,7 @@ void VK::m_destroyVulkan() const {
         texture.destroy();
     }
 
-    // m_skybox->destroy();
+    m_skybox->destroy();
     for (const auto& model : m_models) {
         model.destroy();
     }

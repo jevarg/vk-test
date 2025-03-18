@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "GLTF.h"
+#include "objects/Material.h"
 
 using json = nlohmann::json;
 
@@ -51,7 +52,10 @@ GLTFLoader::GLTFLoader(const char* filePath) {
             auto mesh = std::make_shared<Mesh>("", vertices, indices);
             meshes.emplace_back(mesh);
 
-            return;  // TODO: more meshes
+            const GLTF::Material gltfMaterial = getMaterial(primitive["material"]);
+            Material material(gltfMaterial.name);
+
+            return; // TODO: more meshes
         }
     }
 }
@@ -140,3 +144,42 @@ GLTF::Primitive GLTFLoader::getPrimitiveBuffer(const nlohmann::json& primitive, 
 
     return p;
 }
+
+GLTF::Material GLTFLoader::getMaterial(uint64_t materialId) {
+    json rawMaterial = m_gltf["materials"][materialId];
+    GLTF::Material material{ rawMaterial.value("name", "Unnamed Material") };
+
+    json pbrMaterial = rawMaterial["pbrMetallicRoughness"];
+    if (pbrMaterial != nullptr) {
+        json j = pbrMaterial["baseColorFactor"];
+        if (j != nullptr) {
+            const std::vector<float> baseColor = j.get<std::vector<float>>();
+            material.metallicRoughness.baseColor = glm::make_vec4(baseColor.data());
+        }
+
+        j = pbrMaterial["baseColorTexture"];
+        if (j != nullptr) {
+            material.metallicRoughness.baseColorTexture = j["index"];
+        } else {
+            fmt::println("warning: baseColorTexture was not defined for material {}", materialId);
+        }
+
+        j = pbrMaterial["metallicRoughnessTexture"];
+        if (j != nullptr) {
+            material.metallicRoughness.metallicRoughnessTexture = j["index"];
+        } else {
+            fmt::println("warning: metallicRoughnessTexture was not defined for material {}", materialId);
+        }
+
+        material.metallicRoughness.metallic = pbrMaterial.value("metallicFactor", 1.0f);
+        material.metallicRoughness.roughness = pbrMaterial.value("roughnessFactor", 1.0f);
+    }
+
+    json normal = rawMaterial["normalTexture"];
+    if (normal != nullptr) {
+        material.normalTexture = normal["index"];
+    }
+
+    return material;
+}
+

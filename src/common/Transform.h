@@ -20,8 +20,8 @@ struct Transform {
     }
 
     [[nodiscard]]
-    static glm::mat4 getNormalMatrix(const glm::mat4& model) {
-        const glm::mat3 model3(model);
+    static glm::mat4 getNormalMatrix(const glm::mat4& modelMat) {
+        const glm::mat3 model3(modelMat);
         return inverseTranspose(model3);
     }
 

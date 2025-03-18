@@ -76,6 +76,8 @@ add_executable(VKTest
         src/objects/prefabs/Cube.h
         src/objects/loaders/GLTF.h
         src/gfx/vk/types/ModelConstants.h
+        src/objects/Material.cpp
+        src/objects/Material.h
 )
 
 target_include_directories(VKTest PRIVATE

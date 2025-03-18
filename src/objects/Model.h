@@ -6,7 +6,8 @@
 #include "loaders/GLTFLoader.h"
 
 class Model : public Thing {
-   public:
+public:
+    Model(Mesh mesh, Texture::ID textureID);
     explicit Model(const GLTFLoader& loader);
     // Model(const char* meshPath, Texture::ID textureID);
     // Model(Mesh mesh, Texture::ID textureID);
@@ -21,9 +22,10 @@ class Model : public Thing {
 
     void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
-   private:
+private:
     Texture::ID m_textureID;
 
     std::vector<std::shared_ptr<Mesh>> m_meshes;
-    // std::vector<std::shared_ptr<Materials>> m_materials;
+    // std::unordered_map<Material> m_materials;
+    // std::vector<std::shared_ptr<Material>> m_materials;
 };

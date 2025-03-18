@@ -5,12 +5,12 @@
 
 #include "../vkutil.h"
 
-VulkanContext &VulkanContext::get() {
+VulkanContext& VulkanContext::get() {
     static VulkanContext shared;
     return shared;
 }
 
-void VulkanContext::init(const VkInstance &vkInstance, const VkSurfaceKHR &vkSurface) {
+void VulkanContext::init(const VkInstance& vkInstance, const VkSurfaceKHR& vkSurface) {
     m_vkInstance = vkInstance;
     m_pickPhysicalDevice(vkSurface);
     m_createLogicalDevice();
@@ -45,7 +45,7 @@ const VkDevice& VulkanContext::getDevice() const {
     return m_device;
 }
 
-const VkCommandPool & VulkanContext::getCommandPool() const {
+const VkCommandPool& VulkanContext::getCommandPool() const {
     return m_commandPool;
 }
 
@@ -57,7 +57,7 @@ const VkQueue& VulkanContext::getPresentQueue() const {
     return m_presentQueue;
 }
 
-void VulkanContext::m_pickPhysicalDevice(const VkSurfaceKHR &vkSurface) {
+void VulkanContext::m_pickPhysicalDevice(const VkSurfaceKHR& vkSurface) {
     fmt::println("Picking a suitable device");
 
     uint32_t deviceCount = 0;
@@ -70,7 +70,7 @@ void VulkanContext::m_pickPhysicalDevice(const VkSurfaceKHR &vkSurface) {
     VK_CHECK("Failed to enumerate physical devices",
              vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, devices.data()));
 
-    for (const VkPhysicalDevice& device: devices) {
+    for (const VkPhysicalDevice& device : devices) {
         PhysicalDevice physicalDevice(device, vkSurface);
         if (!physicalDevice.isSuitable()) {
             continue;
@@ -86,16 +86,16 @@ void VulkanContext::m_pickPhysicalDevice(const VkSurfaceKHR &vkSurface) {
 }
 
 void VulkanContext::m_createLogicalDevice() {
-    const QueueFamilyIndices &indices = m_physicalDevice->getQueueFamilyIndices();
+    const QueueFamilyIndices& indices = m_physicalDevice->getQueueFamilyIndices();
     const std::vector requiredVKExtensions{
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        "VK_KHR_portability_subset"
+        // "VK_KHR_portability_subset"
     };
 
     // Queues
     const float queuePriority = 1.0f;
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    for (const uint32_t index: indices.getUnique()) {
+    for (const uint32_t index : indices.getUnique()) {
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = index;
