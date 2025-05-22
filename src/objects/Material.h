@@ -7,7 +7,8 @@
 
 class Material {
 public:
-    Material(const std::string& name);
+    explicit Material(const std::string& name);
+    Material(Material&& other) noexcept = default;
 
 private:
     std::string m_name;

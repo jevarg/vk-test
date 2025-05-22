@@ -5,9 +5,12 @@
 #include "../types/VulkanContext.h"
 
 class Image {
-   public:
+public:
     explicit Image(const VkExtent3D& extent, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                   VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags, VkImageViewType viewType, uint32_t mipLevels = 1, uint32_t layers = 1);
+                   VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags, VkImageViewType viewType,
+                   uint32_t mipLevels = 1, uint32_t layers = 1);
+
+    Image(Image&& other) noexcept = default;
 
     void destroy() const;
     void transitionLayout(VkImageLayout newLayout);
@@ -24,7 +27,7 @@ class Image {
     [[nodiscard]]
     VkImageView getImageView() const;
 
-   protected:
+protected:
     VkImage m_image = VK_NULL_HANDLE;
     VkDeviceMemory m_deviceMemory = VK_NULL_HANDLE;
     VkImageView m_imageView = VK_NULL_HANDLE;

@@ -6,13 +6,14 @@
 #include "input/Mouse.h"
 #include "vk/types/UniformBufferObject.h"
 #include "vk/vkutil.h"
+#include "vk/types/VulkanContext.h"
 
 Camera::Camera(const float aspectRatio, const VkDescriptorPool& descriptorPool,
                const VkDescriptorSetLayout& descriptorSetLayout) {
     m_projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.01f, 1000.0f);
 
     // TODO: change that
-    m_projection[1][1] *= -1;  // inverting y because vulkan != gl
+    m_projection[1][1] *= -1; // inverting y because vulkan != gl
 
     m_uniformBuffer =
         std::make_unique<Buffer>(sizeof(UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -27,8 +28,9 @@ void Camera::destroy() const {
 }
 
 glm::mat4 Camera::getView() const {
-    const glm::vec3 fwdVec = m_transform.rotation * glm::vec3(0.0f, 0.0f, -1.0f);
-    return lookAt(m_transform.position, m_transform.position + fwdVec, glm::vec3(0.0f, 1.0f, 0.0f));
+    const auto& pos = m_transform.getPosition();
+    const glm::vec3 fwdVec = m_transform.getRotation() * glm::vec3(0.0f, 0.0f, -1.0f);
+    return lookAt(pos, pos + fwdVec, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 const glm::mat4& Camera::getProjection() const {
@@ -50,28 +52,28 @@ void Camera::update(const float delta) {
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_W)) {
-        localTranslate({ 0.0f, 0.0f, -speed });
+        m_transform.translate({ 0.0f, 0.0f, -speed });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_S)) {
-        localTranslate({ 0.0f, 0.0f, speed });
+        m_transform.translate({ 0.0f, 0.0f, speed });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_A)) {
-        localTranslate({ -speed, 0.0f, 0.0f });
+        m_transform.translate({ -speed, 0.0f, 0.0f });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_D)) {
-        localTranslate({ speed, 0.0f, 0.0f });
+        m_transform.translate({ speed, 0.0f, 0.0f });
     }
 
     const glm::vec2& mouseDelta = Mouse::getDelta();
     if (mouseDelta.x != 0) {
-        rotate(-m_sensitivity * mouseDelta.x, { 0.0f, 1.0f, 0.0f });
+        m_transform.rotate(-m_sensitivity * mouseDelta.x, { 0.0f, 1.0f, 0.0f });
     }
 
     if (mouseDelta.y != 0) {
-        rotate(-m_sensitivity * mouseDelta.y, { 1.0f, 0.0f, 0.0f });
+        m_transform.rotate(-m_sensitivity * mouseDelta.y, { 1.0f, 0.0f, 0.0f });
     }
 
     const UniformBufferObject ubo{

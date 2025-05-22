@@ -2,6 +2,8 @@
 
 #include "gfx/vk/OneTimeCommand.h"
 #include "gfx/vk/vkutil.h"
+#include "gfx/vk/types/VulkanContext.h"
+#include "Texture.h"
 
 Buffer::Buffer(const VkDeviceSize size, const VkBufferUsageFlags usage, const VkMemoryPropertyFlags properties)
     : m_size(size) {
@@ -21,7 +23,8 @@ Buffer::Buffer(const VkDeviceSize size, const VkBufferUsageFlags usage, const Vk
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = vkContext.getPhysicalDevice().findMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = vkContext.getPhysicalDevice().
+                                          findMemoryType(memRequirements.memoryTypeBits, properties);
 
     VK_CHECK("failed to allocate vertex buffer memory",
              vkAllocateMemory(vkContext.getDevice(), &allocInfo, nullptr, &m_bufferMemory));
@@ -48,7 +51,7 @@ const VkDeviceMemory& Buffer::getMemory() const {
     return m_bufferMemory;
 }
 
-void *Buffer::map() const {
+void* Buffer::map() const {
     void* ptr;
     vkMapMemory(VulkanContext::get().getDevice(), m_bufferMemory, 0, m_size, 0, &ptr);
 

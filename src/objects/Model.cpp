@@ -123,25 +123,26 @@ using json = nlohmann::json;
 //     fmt::println("Loaded model: {} ({} vertices)", meshPath, m_mesh.getIndices().size());
 // }
 //
-Model::Model(Mesh mesh, const Texture::ID textureID) : m_textureID(textureID) {
-    m_meshes.push_back(std::make_shared<Mesh>(std::move(mesh)));
+Model::Model(Node& rootNode, const Texture::ID textureID) : m_textureID(textureID),
+                                                            m_rootNode(std::move(rootNode)) {
+    // m_meshes.push_back(std::make_shared<Mesh>(std::move(mesh)));
 }
 
-Model::Model(const GLTFLoader& loader) : m_textureID(0), m_meshes(loader.meshes) {}
+Model::Model(const GLTFLoader& loader) : m_textureID(0) {}
 
 void Model::destroy() const {
-    for (const auto& mesh : m_meshes) {
-        mesh->destroy();
-    }
+    // for (const auto& mesh : m_meshes) {
+    //     mesh->destroy();
+    // }
 }
 
 const Texture::ID& Model::getTextureID() const {
     return m_textureID;
 }
 
-const std::vector<std::shared_ptr<Mesh>>& Model::getMeshes() const {
-    return m_meshes;
-}
+// const std::vector<std::shared_ptr<Mesh>>& Model::getMeshes() const {
+//     return m_meshes;
+// }
 
 // const Mesh &Model::getMesh() const {
 //     return m_mesh;
@@ -149,21 +150,21 @@ const std::vector<std::shared_ptr<Mesh>>& Model::getMeshes() const {
 
 void Model::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const {
     // for (const auto& mesh : m_meshes) {
-    const std::array buffers = { m_meshes[0]->getVertexBuffer().buffer() };
-    constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
-
-    vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
-    vkCmdBindIndexBuffer(commandBuffer, m_meshes[0]->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
-
-    const glm::mat4 modelMatrix = m_transform.getMatrix();
-    const glm::mat4 normalMatrix = Transform::getNormalMatrix(modelMatrix);
-    const ModelConstants constants{
-        modelMatrix,
-        normalMatrix,
-    };
-
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
-                       &constants);
-    vkCmdDrawIndexed(commandBuffer, m_meshes[0]->getIndices().size(), 1, 0, 0, 0);
+    // const std::array buffers = { m_meshes[0]->getVertexBuffer().buffer() };
+    // constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
+    //
+    // vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
+    // vkCmdBindIndexBuffer(commandBuffer, m_meshes[0]->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
+    //
+    // const glm::mat4 modelMatrix = m_transform.getMatrix();
+    // const glm::mat4 normalMatrix = Transform::getNormalMatrix(modelMatrix);
+    // const ModelConstants constants{
+    //     modelMatrix,
+    //     normalMatrix,
+    // };
+    //
+    // vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
+    //                    &constants);
+    // vkCmdDrawIndexed(commandBuffer, m_meshes[0]->getIndices().size(), 1, 0, 0, 0);
     // }
 }

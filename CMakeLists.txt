@@ -66,18 +66,22 @@ add_executable(VKTest
         src/objects/prefabs/Plane.h
         src/objects/Mesh.cpp
         src/objects/Mesh.h
+        src/objects/Material.cpp
+        src/objects/Material.h
+        src/objects/Node.cpp
+        src/objects/Node.h
+        src/objects/Primitive.cpp
+        src/objects/Primitive.h
         src/objects/loaders/GLTFLoader.cpp
         src/objects/loaders/GLTFLoader.h
         src/common/Transform.h
-        src/common/Thing.h
         src/input/Keyboard.h
         src/input/Mouse.h
         src/objects/prefabs/Cube.cpp
         src/objects/prefabs/Cube.h
         src/objects/loaders/GLTF.h
         src/gfx/vk/types/ModelConstants.h
-        src/objects/Material.cpp
-        src/objects/Material.h
+        src/common/Transform.cpp
 )
 
 target_include_directories(VKTest PRIVATE

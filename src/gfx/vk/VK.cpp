@@ -703,9 +703,9 @@ void VK::m_initVulkan() {
                                 "./assets/skybox/hl1/front.bmp",
                             }, m_descriptorPool, m_textureDescriptorSetLayout);
 
-    m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
+    // m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
+    m_models.emplace_back(GLTFLoader("./assets/models/box/Box.gltf"));
     m_models[0].rotate(3.14116, { 0, 1, 0 });
-    // m_models.emplace_back("./assets/models/triangles/SimpleMeshes.gltf");
     m_skybox = std::make_unique<Cube>(m_textures[1].getID());
 
     // m_createDescriptorSets();

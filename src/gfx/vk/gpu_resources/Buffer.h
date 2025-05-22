@@ -2,11 +2,12 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "Texture.h"
+class Texture;
 
 class Buffer {
-   public:
+public:
     Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    Buffer(Buffer&& other) noexcept = default;
 
     void destroy() const;
 
@@ -20,7 +21,7 @@ class Buffer {
     const VkDeviceMemory& getMemory() const;
 
     [[nodiscard]]
-    void *map() const;
+    void* map() const;
     void unmap() const;
 
     void setMemory(const void* src, VkDeviceSize offset = 0, VkMemoryMapFlags flags = 0) const;
@@ -28,7 +29,7 @@ class Buffer {
     void copyTo(const Buffer& dst) const;
     void copyTo(const Texture& texture, uint32_t layerCount) const;
 
-   private:
+private:
     const VkDeviceSize m_size;
 
     VkBuffer m_buffer = VK_NULL_HANDLE;

@@ -3,11 +3,10 @@
 #include <memory>
 
 #include "Image.h"
-
-class Buffer;
+#include "Buffer.h"
 
 class Texture {
-   public:
+public:
     typedef size_t ID;
 
     explicit Texture(const std::vector<const char*>& filenames, const VkDescriptorPool& descriptorPool,
@@ -27,7 +26,7 @@ class Texture {
     [[nodiscard]]
     const VkDescriptorSet& getDescriptorSet() const;
 
-   private:
+private:
     inline static ID lastID = 0;
 
     static ID nextID() {

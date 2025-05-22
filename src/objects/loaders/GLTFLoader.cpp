@@ -6,61 +6,88 @@
 #include <sstream>
 
 #include "GLTF.h"
+#include "fmt/printf.h"
 #include "objects/Material.h"
+#include "objects/Node.h"
 
 using json = nlohmann::json;
 
-GLTFLoader::GLTFLoader(const char* filePath) {
+GLTFLoader::GLTFLoader(const char* filePath): m_filePath(filePath) {
     std::ifstream f(filePath);
     m_gltf = json::parse(f);
     f.close();
 
     const auto rootPath = std::filesystem::path(filePath).parent_path();
-    loadFiles(rootPath);
+    _loadFiles(rootPath);
 
     uint64_t sceneId = m_gltf["scene"];
-    for (uint64_t nodeId : m_gltf["scenes"][sceneId]["nodes"]) {
-        auto node = m_gltf["nodes"][nodeId];
+    for (uint64_t rootNodeId : m_gltf["scenes"][sceneId]["nodes"]) {
+        auto rootNode = m_gltf["nodes"][rootNodeId];
+        Node node;
 
-        uint64_t meshId = node["mesh"];
-        auto gltfMesh = m_gltf["meshes"][meshId];
-        const std::string meshName = gltfMesh.value("name", "unnamed");
-        for (const auto& primitive : gltfMesh["primitives"]) {
-            const GLTF::Primitive indicesPrimitive = getPrimitiveBuffer(primitive, "indices");
-            const GLTF::Primitive positionsPrimitive = getPrimitiveBuffer(primitive["attributes"], "POSITION");
-            const GLTF::Primitive normalsPrimitive = getPrimitiveBuffer(primitive["attributes"], "NORMAL");
-            const GLTF::Primitive texCoordsPrimitive = getPrimitiveBuffer(primitive["attributes"], "TEXCOORD_0");
+        // Make node children and fill it
 
-            const auto& rawPositions = std::get<std::vector<float>>(positionsPrimitive.data);
-            const auto& rawNormals = std::get<std::vector<float>>(normalsPrimitive.data);
-            const auto& rawTexCoords = std::get<std::vector<float>>(texCoordsPrimitive.data);
-
-            std::vector<Vertex> vertices(positionsPrimitive.count);
-            for (int i = 0; i < positionsPrimitive.count; ++i) {
-                vertices[i].pos = glm::make_vec3(&rawPositions[i * 3]);
-                vertices[i].normal = glm::make_vec3(&rawNormals[i * 3]);
-                vertices[i].texCoord = glm::make_vec2(&rawTexCoords[i * 2]);
-                vertices[i].color = { 1, 1, 1 }; // TODO: is this ok?
-            }
-
-            const auto& rawIndices = std::get<std::vector<uint16_t>>(indicesPrimitive.data);
-            std::vector<uint32_t> indices(indicesPrimitive.count);
-            for (int i = 0; i < indicesPrimitive.count; ++i) {
-                indices[i] = rawIndices[i];
-            }
-
-            auto mesh = std::make_shared<Mesh>("", vertices, indices);
-            meshes.emplace_back(mesh);
-
-            const GLTF::Material gltfMaterial = getMaterial(primitive["material"]);
-            Material material(gltfMaterial.name);
-
-            return; // TODO: more meshes
-        }
+        uint64_t meshId = rootNode["mesh"];
+        Mesh mesh = _buildMesh(meshId);
+        // auto gltfMesh = m_gltf["meshes"][meshId];
+        // const std::string meshName = gltfMesh.value("name", "unnamed");
+        // for (const auto& primitive : gltfMesh["primitives"]) {
+        //     const GLTF::Primitive positionsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "POSITION");
+        //     const GLTF::Primitive indicesPrimitive = _getPrimitiveBuffer(primitive, "indices");
+        //     if (!positionsPrimitive.count || !indicesPrimitive.count) {
+        //         fmt::printf("{}: Missing positions or indices for mesh {}!", filePath, meshId);
+        //         continue;
+        //     }
+        //
+        //     const GLTF::Primitive normalsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "NORMAL");
+        //     const GLTF::Primitive texCoordsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "TEXCOORD_0");
+        //
+        //     std::vector<Vertex> vertices(positionsPrimitive.count);
+        //
+        //     const auto& rawPositions = std::get<std::vector<float>>(positionsPrimitive.data);
+        //     for (int i = 0; i < positionsPrimitive.count; ++i) {
+        //         vertices[i].pos = glm::make_vec3(&rawPositions[i * 3]);
+        //         vertices[i].color = { 1, 1, 1 }; // TODO: is this ok?
+        //     }
+        //
+        //     if (normalsPrimitive.count > 1) {
+        //         const auto& rawNormals = std::get<std::vector<float>>(normalsPrimitive.data);
+        //         for (int i = 0; i < positionsPrimitive.count; ++i) {
+        //             vertices[i].normal = glm::make_vec3(&rawNormals[i * 3]);
+        //         }
+        //     }
+        //
+        //     if (texCoordsPrimitive.count > 1) {
+        //         const auto& rawTexCoords = std::get<std::vector<float>>(texCoordsPrimitive.data);
+        //         for (int i = 0; i < positionsPrimitive.count; ++i) {
+        //             vertices[i].texCoord = glm::make_vec2(&rawTexCoords[i * 2]);
+        //         }
+        //     }
+        //
+        //     const auto rawIndices = std::get<std::vector<uint16_t>>(indicesPrimitive.data);
+        //     std::vector<uint32_t> indices(indicesPrimitive.count);
+        //     for (int i = 0; i < indicesPrimitive.count; ++i) {
+        //         indices[i] = rawIndices[i];
+        //     }
+        //
+        //     auto mesh = std::make_shared<Mesh>(meshName, vertices, indices);
+        //     // meshes.emplace_back(mesh);
+        //
+        //     if (primitive.contains("material")) {
+        //         const GLTF::Material gltfMaterial = _getMaterial(primitive["material"]);
+        //         Material material(gltfMaterial.name);
+        //     }
+        //
+        //     // return; // TODO: more meshes
+        // }
     }
 }
 
-void GLTFLoader::loadFiles(const std::filesystem::path& rootPath) {
+std::unique_ptr<Model> GLTFLoader::acquire() {
+    return std::move(m_model);
+}
+
+void GLTFLoader::_loadFiles(const std::filesystem::path& rootPath) {
     for (const auto& buffer : m_gltf["buffers"]) {
         std::ifstream bufferFile(rootPath / buffer["uri"], std::ios_base::binary);
         std::vector<uint8_t> data(std::istreambuf_iterator{ bufferFile }, {});
@@ -78,7 +105,70 @@ void GLTFLoader::loadFiles(const std::filesystem::path& rootPath) {
     }
 }
 
-GLTF::Primitive GLTFLoader::getPrimitiveBuffer(const nlohmann::json& primitive, const char* key) {
+Mesh GLTFLoader::_buildMesh(uint64_t meshId) const {
+    auto gltfMesh = m_gltf["meshes"][meshId];
+    const std::string meshName = gltfMesh.value("name", "unnamed");
+    std::vector<Primitive> primitives;
+
+    for (const auto& primitive : gltfMesh["primitives"]) {
+        const GLTF::Primitive positionsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "POSITION");
+        const GLTF::Primitive indicesPrimitive = _getPrimitiveBuffer(primitive, "indices");
+        if (!positionsPrimitive.count || !indicesPrimitive.count) {
+            fmt::printf("{}: Missing positions or indices for mesh {}!", m_filePath, meshId);
+            continue;
+        }
+
+        const GLTF::Primitive normalsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "NORMAL");
+        const GLTF::Primitive texCoordsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "TEXCOORD_0");
+
+        std::vector<Vertex> vertices(positionsPrimitive.count);
+
+        const auto& rawPositions = std::get<std::vector<float>>(positionsPrimitive.data);
+        for (int i = 0; i < positionsPrimitive.count; ++i) {
+            vertices[i].pos = glm::make_vec3(&rawPositions[i * 3]);
+            vertices[i].color = { 1, 1, 1 }; // TODO: is this ok?
+        }
+
+        if (normalsPrimitive.count > 1) {
+            const auto& rawNormals = std::get<std::vector<float>>(normalsPrimitive.data);
+            for (int i = 0; i < positionsPrimitive.count; ++i) {
+                vertices[i].normal = glm::make_vec3(&rawNormals[i * 3]);
+            }
+        }
+
+        if (texCoordsPrimitive.count > 1) {
+            const auto& rawTexCoords = std::get<std::vector<float>>(texCoordsPrimitive.data);
+            for (int i = 0; i < positionsPrimitive.count; ++i) {
+                vertices[i].texCoord = glm::make_vec2(&rawTexCoords[i * 2]);
+            }
+        }
+
+        const auto rawIndices = std::get<std::vector<uint16_t>>(indicesPrimitive.data);
+        std::vector<uint32_t> indices(indicesPrimitive.count);
+        for (int i = 0; i < indicesPrimitive.count; ++i) {
+            indices[i] = rawIndices[i];
+        }
+
+        // auto mesh = std::make_shared<Primitive>(meshName, vertices, indices);
+        // meshes.emplace_back(mesh);
+
+        Primitive newPrimitive(vertices, indices);
+        if (primitive.contains("material")) {
+            const GLTF::Material gltfMaterial = _getMaterial(primitive["material"]);
+            newPrimitive.setMaterial(std::make_unique<Material>(gltfMaterial.name));
+        }
+
+        primitives.push_back(std::move(newPrimitive));
+    }
+
+    return Mesh(meshName, std::move(primitives));
+}
+
+GLTF::Primitive GLTFLoader::_getPrimitiveBuffer(const nlohmann::json& primitive, const char* key) const {
+    if (!primitive.contains(key)) {
+        return {};
+    }
+
     const uint64_t accessorId = primitive[key];
 
     const json accessor = m_gltf["accessors"][accessorId];
@@ -93,7 +183,7 @@ GLTF::Primitive GLTFLoader::getPrimitiveBuffer(const nlohmann::json& primitive, 
     const std::string type = accessor["type"];
     const GLTF::DataType dataType = GLTF::dataTypeMap.at(type);
 
-    GLTF::Primitive p;
+    GLTF::Primitive p{};
     p.count = count;
     p.byteSize = byteSize;
 
@@ -145,7 +235,7 @@ GLTF::Primitive GLTFLoader::getPrimitiveBuffer(const nlohmann::json& primitive, 
     return p;
 }
 
-GLTF::Material GLTFLoader::getMaterial(uint64_t materialId) {
+GLTF::Material GLTFLoader::_getMaterial(uint64_t materialId) const {
     json rawMaterial = m_gltf["materials"][materialId];
     GLTF::Material material{ rawMaterial.value("name", "Unnamed Material") };
 
