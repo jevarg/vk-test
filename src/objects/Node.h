@@ -7,14 +7,17 @@ class Mesh;
 class Node {
 public:
     Node() = default;
-    Node(Node* parent, Mesh* mesh);
 
-    void setParent(Node* parent);
-    void setMesh(Mesh* mesh);
-    void addChild(std::unique_ptr<Node> other);
+    Node(const std::shared_ptr<Node>& parent, std::unique_ptr<Mesh> mesh);
+    explicit Node(std::unique_ptr<Mesh> mesh);
+
+    void setParent(const std::shared_ptr<Node>& parent);
+    void addChild(const std::shared_ptr<Node>& other);
+
+    void setMesh(std::unique_ptr<Mesh> mesh);
 
 private:
-    std::list<std::unique_ptr<Node>> m_children;
-    Node* m_parent = nullptr;
-    Mesh* m_mesh = nullptr;
+    std::list<std::shared_ptr<Node>> m_children;
+    std::shared_ptr<Node> m_parent;
+    std::unique_ptr<Mesh> m_mesh;
 };

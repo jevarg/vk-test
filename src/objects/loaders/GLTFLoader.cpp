@@ -23,12 +23,12 @@ GLTFLoader::GLTFLoader(const char* filePath): m_filePath(filePath) {
     uint64_t sceneId = m_gltf["scene"];
     for (uint64_t rootNodeId : m_gltf["scenes"][sceneId]["nodes"]) {
         auto rootNode = m_gltf["nodes"][rootNodeId];
-        Node node;
 
         // Make node children and fill it
 
         uint64_t meshId = rootNode["mesh"];
         Mesh mesh = _buildMesh(meshId);
+        Node node(mesh);
         // auto gltfMesh = m_gltf["meshes"][meshId];
         // const std::string meshName = gltfMesh.value("name", "unnamed");
         // for (const auto& primitive : gltfMesh["primitives"]) {
@@ -149,9 +149,6 @@ Mesh GLTFLoader::_buildMesh(uint64_t meshId) const {
             indices[i] = rawIndices[i];
         }
 
-        // auto mesh = std::make_shared<Primitive>(meshName, vertices, indices);
-        // meshes.emplace_back(mesh);
-
         Primitive newPrimitive(vertices, indices);
         if (primitive.contains("material")) {
             const GLTF::Material gltfMaterial = _getMaterial(primitive["material"]);
@@ -161,7 +158,7 @@ Mesh GLTFLoader::_buildMesh(uint64_t meshId) const {
         primitives.push_back(std::move(newPrimitive));
     }
 
-    return Mesh(meshName, std::move(primitives));
+    return {meshName, std::move(primitives)};
 }
 
 GLTF::Primitive GLTFLoader::_getPrimitiveBuffer(const nlohmann::json& primitive, const char* key) const {
