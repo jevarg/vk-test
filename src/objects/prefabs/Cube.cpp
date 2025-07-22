@@ -1,4 +1,5 @@
 #include "Cube.h"
+#include "objects/Mesh.h"
 
 constexpr float uvX = 0.25;
 constexpr float uvY = 1.0f / 3;
@@ -38,4 +39,11 @@ const std::vector<uint32_t> indices = {
     6, 7, 2, 2, 1, 6,
 };
 
-Cube::Cube(const Texture::ID textureID) : Model(Primitive("Cube", vertices, indices), textureID) {}
+std::unique_ptr<Mesh> Cube::_createCubeMesh() {
+    std::vector<Primitive> primitives;
+    primitives.emplace_back(vertices, indices);
+
+    return std::make_unique<Mesh>("Cube", std::move(primitives));
+}
+
+Cube::Cube(const Texture::ID textureID) : Model(std::make_unique<Node>(_createCubeMesh()), textureID) {}

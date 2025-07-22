@@ -6,7 +6,7 @@
 
 class Model {
 public:
-    Model(Node& rootNode, Texture::ID textureID);
+    Model(std::unique_ptr<Node> rootNode, Texture::ID textureID);
     explicit Model(const GLTFLoader& loader);
     // Model(const char* meshPath, Texture::ID textureID);
     // Model(Mesh mesh, Texture::ID textureID);
@@ -21,10 +21,14 @@ public:
 
     void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
+    void translate(const glm::vec3& v) const;
+    void rotate(float angle, const glm::vec3& axis) const;
+    void scale(const glm::vec3& v) const;
+
 private:
     Texture::ID m_textureID;
 
-    Node m_rootNode;
+    std::unique_ptr<Node> m_rootNode;
     // std::vector<std::shared_ptr<Mesh>> m_meshes;
     // std::unordered_map<Material> m_materials;
     // std::vector<std::shared_ptr<Material>> m_materials;

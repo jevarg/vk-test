@@ -121,9 +121,9 @@ using json = nlohmann::json;
 
 // Model::Model(const char *meshPath, const Texture::ID textureID) : m_textureID(textureID), m_mesh(meshPath) {
 //     fmt::println("Loaded model: {} ({} vertices)", meshPath, m_mesh.getIndices().size());
-// }
+// ø}
 //
-Model::Model(Node& rootNode, const Texture::ID textureID) : m_textureID(textureID),
+Model::Model(std::unique_ptr<Node> rootNode, const Texture::ID textureID) : m_textureID(textureID),
                                                             m_rootNode(std::move(rootNode)) {
     // m_meshes.push_back(std::make_shared<Mesh>(std::move(mesh)));
 }
@@ -167,4 +167,16 @@ void Model::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& p
     //                    &constants);
     // vkCmdDrawIndexed(commandBuffer, m_meshes[0]->getIndices().size(), 1, 0, 0, 0);
     // }
+}
+
+void Model::translate(const glm::vec3& v) const {
+    m_rootNode->translate(v);
+}
+
+void Model::rotate(const float angle, const glm::vec3& axis) const {
+    m_rootNode->rotate(angle, axis);
+}
+
+void Model::scale(const glm::vec3& v) const {
+    m_rootNode->scale(v);
 }

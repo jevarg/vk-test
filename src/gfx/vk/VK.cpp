@@ -704,7 +704,7 @@ void VK::m_initVulkan() {
                             }, m_descriptorPool, m_textureDescriptorSetLayout);
 
     // m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
-    m_models.emplace_back(GLTFLoader("./assets/models/box/Box.gltf"));
+    m_models.emplace_back(GLTFLoader("./assets/models/triangles/SimpleMeshes.gltf"));
     m_models[0].rotate(3.14116, { 0, 1, 0 });
     m_skybox = std::make_unique<Cube>(m_textures[1].getID());
 

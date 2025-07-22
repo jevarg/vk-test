@@ -28,7 +28,8 @@ public:
 private:
     void _loadFiles(const std::filesystem::path& rootPath);
 
-    Mesh _buildMesh(uint64_t meshId) const;
+    [[nodiscard]]
+    std::unique_ptr<Mesh> _buildMesh(uint64_t meshId) const;
     GLTF::Primitive _getPrimitiveBuffer(const nlohmann::json& primitive, const char* key) const;
     GLTF::Material _getMaterial(uint64_t materialId) const;
     // void loadVertices();

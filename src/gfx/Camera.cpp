@@ -28,8 +28,8 @@ void Camera::destroy() const {
 }
 
 glm::mat4 Camera::getView() const {
-    const auto& pos = m_transform.getPosition();
-    const glm::vec3 fwdVec = m_transform.getRotation() * glm::vec3(0.0f, 0.0f, -1.0f);
+    const glm::vec3& pos = m_node.getTransform().getPosition();
+    const glm::vec3 fwdVec = m_node.getTransform().getRotation() * glm::vec3(0.0f, 0.0f, -1.0f);
     return lookAt(pos, pos + fwdVec, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
@@ -45,6 +45,10 @@ const VkDescriptorSet& Camera::getDescriptorSet() const {
     return m_descriptorSet;
 }
 
+void Camera::setPosition(const glm::vec3& v) {
+    m_node.setPosition(v);
+}
+
 void Camera::update(const float delta) {
     float speed = m_speed;
     if (Keyboard::isModPressed(KMOD_SHIFT)) {
@@ -52,28 +56,28 @@ void Camera::update(const float delta) {
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_W)) {
-        m_transform.translate({ 0.0f, 0.0f, -speed });
+        m_node.translate({ 0.0f, 0.0f, -speed });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_S)) {
-        m_transform.translate({ 0.0f, 0.0f, speed });
+        m_node.translate({ 0.0f, 0.0f, speed });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_A)) {
-        m_transform.translate({ -speed, 0.0f, 0.0f });
+        m_node.translate({ -speed, 0.0f, 0.0f });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_D)) {
-        m_transform.translate({ speed, 0.0f, 0.0f });
+        m_node.translate({ speed, 0.0f, 0.0f });
     }
 
     const glm::vec2& mouseDelta = Mouse::getDelta();
     if (mouseDelta.x != 0) {
-        m_transform.rotate(-m_sensitivity * mouseDelta.x, { 0.0f, 1.0f, 0.0f });
+        m_node.rotate(-m_sensitivity * mouseDelta.x, { 0.0f, 1.0f, 0.0f });
     }
 
     if (mouseDelta.y != 0) {
-        m_transform.rotate(-m_sensitivity * mouseDelta.y, { 1.0f, 0.0f, 0.0f });
+        m_node.rotate(-m_sensitivity * mouseDelta.y, { 1.0f, 0.0f, 0.0f });
     }
 
     const UniformBufferObject ubo{

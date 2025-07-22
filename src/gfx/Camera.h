@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "common/Transform.h"
+#include "objects/Node.h"
 #include "vk/gpu_resources/Buffer.h"
 
 class Camera {
@@ -26,13 +27,15 @@ public:
     [[nodiscard]]
     const VkDescriptorSet& getDescriptorSet() const;
 
+    void setPosition(const glm::vec3& v);
+
 private:
     void m_createDescriptorSet(const VkDescriptorPool& descriptorPool,
                                const VkDescriptorSetLayout& descriptorSetLayout);
 
     VkDescriptorSet m_descriptorSet = VK_NULL_HANDLE;
     std::unique_ptr<Buffer> m_uniformBuffer;
-    Transform m_transform;
+    Node m_node;
     glm::mat4 m_projection{};
 
     float m_speed = 0.1f;

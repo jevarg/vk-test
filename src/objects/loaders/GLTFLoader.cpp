@@ -8,12 +8,17 @@
 #include "GLTF.h"
 #include "fmt/printf.h"
 #include "objects/Material.h"
+#include "objects/Model.h"
 #include "objects/Node.h"
 
 using json = nlohmann::json;
 
 GLTFLoader::GLTFLoader(const char* filePath): m_filePath(filePath) {
     std::ifstream f(filePath);
+    if (!f.is_open()) {
+        throw std::runtime_error(fmt::format("GLTF ERROR: cannot open {}", filePath));
+    }
+
     m_gltf = json::parse(f);
     f.close();
 
@@ -27,8 +32,8 @@ GLTFLoader::GLTFLoader(const char* filePath): m_filePath(filePath) {
         // Make node children and fill it
 
         uint64_t meshId = rootNode["mesh"];
-        Mesh mesh = _buildMesh(meshId);
-        Node node(mesh);
+        std::unique_ptr<Node> node = std::make_unique<Node>(_buildMesh(meshId));
+        m_model = std::make_unique<Model>(std::move(node), 0);
         // auto gltfMesh = m_gltf["meshes"][meshId];
         // const std::string meshName = gltfMesh.value("name", "unnamed");
         // for (const auto& primitive : gltfMesh["primitives"]) {
@@ -105,7 +110,7 @@ void GLTFLoader::_loadFiles(const std::filesystem::path& rootPath) {
     }
 }
 
-Mesh GLTFLoader::_buildMesh(uint64_t meshId) const {
+std::unique_ptr<Mesh> GLTFLoader::_buildMesh(uint64_t meshId) const {
     auto gltfMesh = m_gltf["meshes"][meshId];
     const std::string meshName = gltfMesh.value("name", "unnamed");
     std::vector<Primitive> primitives;
@@ -158,7 +163,7 @@ Mesh GLTFLoader::_buildMesh(uint64_t meshId) const {
         primitives.push_back(std::move(newPrimitive));
     }
 
-    return {meshName, std::move(primitives)};
+    return std::make_unique<Mesh>(meshName, std::move(primitives));
 }
 
 GLTF::Primitive GLTFLoader::_getPrimitiveBuffer(const nlohmann::json& primitive, const char* key) const {
