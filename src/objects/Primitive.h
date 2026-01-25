@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 
-#include "gfx/vk/types/Vertex.h"
 #include "Material.h"
+#include "gfx/vk/types/Vertex.h"
 
 class Buffer;
 
@@ -12,9 +12,11 @@ class Primitive {
 public:
     // explicit Mesh(const char* modelPath);
 
-    Primitive(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+    Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices);
     Primitive(Primitive&& other) noexcept = default;
 
+    void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout,
+              const glm::mat4& transform) const;
     void destroy() const;
 
     [[nodiscard]]

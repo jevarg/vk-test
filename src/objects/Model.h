@@ -16,7 +16,7 @@ public:
     [[nodiscard]]
     const Texture::ID& getTextureID() const;
 
-    // [[nodiscard]]
+    // [[nodiscard]]œ
     // const std::vector<std::shared_ptr<Mesh>>& getMeshes() const;
 
     void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;

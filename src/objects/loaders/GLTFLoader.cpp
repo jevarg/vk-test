@@ -10,10 +10,13 @@
 #include "objects/Material.h"
 #include "objects/Model.h"
 #include "objects/Node.h"
+#include "objects/gltf/Accessor.h"
+#include "objects/gltf/Attribute.h"
+#include "objects/gltf/Primitive.h"
 
 using json = nlohmann::json;
 
-GLTFLoader::GLTFLoader(const char* filePath): m_filePath(filePath) {
+GLTFLoader::GLTFLoader(const char* filePath) : m_filePath(filePath) {
     std::ifstream f(filePath);
     if (!f.is_open()) {
         throw std::runtime_error(fmt::format("GLTF ERROR: cannot open {}", filePath));
@@ -24,6 +27,8 @@ GLTFLoader::GLTFLoader(const char* filePath): m_filePath(filePath) {
 
     const auto rootPath = std::filesystem::path(filePath).parent_path();
     _loadFiles(rootPath);
+
+    m_accessors = m_gltf["accessors"].get<std::vector<GLTF::Accessor>>();
 
     uint64_t sceneId = m_gltf["scene"];
     for (uint64_t rootNodeId : m_gltf["scenes"][sceneId]["nodes"]) {
@@ -113,129 +118,188 @@ void GLTFLoader::_loadFiles(const std::filesystem::path& rootPath) {
 std::unique_ptr<Mesh> GLTFLoader::_buildMesh(uint64_t meshId) const {
     auto gltfMesh = m_gltf["meshes"][meshId];
     const std::string meshName = gltfMesh.value("name", "unnamed");
-    std::vector<Primitive> primitives;
 
-    for (const auto& primitive : gltfMesh["primitives"]) {
-        const GLTF::Primitive positionsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "POSITION");
-        const GLTF::Primitive indicesPrimitive = _getPrimitiveBuffer(primitive, "indices");
-        if (!positionsPrimitive.count || !indicesPrimitive.count) {
-            fmt::printf("{}: Missing positions or indices for mesh {}!", m_filePath, meshId);
-            continue;
+    for (const GLTF::Primitive& primitive : gltfMesh["primitives"].get<std::vector<GLTF::Primitive>>()) {
+        if (!primitive.indices.has_value()) {
+            throw std::runtime_error("No indices, panicking!");
         }
 
-        const GLTF::Primitive normalsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "NORMAL");
-        const GLTF::Primitive texCoordsPrimitive = _getPrimitiveBuffer(primitive["attributes"], "TEXCOORD_0");
+        const GLTF::Accessor& indicesAccessor = m_accessors[primitive.indices.value()];
+        std::vector<Vertex> vertices;
 
-        std::vector<Vertex> vertices(positionsPrimitive.count);
+        const std::span rawIndices = indicesAccessor.access<uint16_t>(m_files.buffers);
+        std::vector<uint32_t> indices(rawIndices.data(), rawIndices.data() + rawIndices.size_bytes());
 
-        const auto& rawPositions = std::get<std::vector<float>>(positionsPrimitive.data);
-        for (int i = 0; i < positionsPrimitive.count; ++i) {
-            vertices[i].pos = glm::make_vec3(&rawPositions[i * 3]);
-            vertices[i].color = { 1, 1, 1 }; // TODO: is this ok?
-        }
+        for (const GLTF::Attribute& attribute : primitive.attributes) {
+            const GLTF::Accessor& accessor = m_accessors[attribute.accessorIndex];
 
-        if (normalsPrimitive.count > 1) {
-            const auto& rawNormals = std::get<std::vector<float>>(normalsPrimitive.data);
-            for (int i = 0; i < positionsPrimitive.count; ++i) {
-                vertices[i].normal = glm::make_vec3(&rawNormals[i * 3]);
+            switch (attribute.type) {
+                case (GLTF::Attribute::Type::Position):
+                    accessor.visit<glm::vec3>(m_files.buffers, [&vertices](const size_t i, const glm::vec3 v) {
+                        if (vertices.size() <= i) {
+                            vertices.emplace_back();
+                        }
+
+                        vertices[i].pos = v;
+                    });
+                    break;
+
+                case (GLTF::Attribute::Type::Normal):
+                    accessor.visit<glm::vec3>(m_files.buffers, [&vertices](const size_t i, const glm::vec3 v) {
+                        if (vertices.size() <= i) {
+                            vertices.emplace_back();
+                        }
+
+                        vertices[i].normal = v;
+                    });
+                    break;
+
+                case (GLTF::Attribute::Type::Texcoord):
+                    accessor.visit<glm::vec3>(m_files.buffers, [&vertices](const size_t i, const glm::vec3 v) {
+                        if (vertices.size() <= i) {
+                            vertices.emplace_back();
+                        }
+
+                        vertices[i].texCoord = v;
+                    });
+                    break;
+                default:
+                    fmt::println("Ignored attribute type={}, isUnique={}, index={}, accessorIndex={}",
+                                 static_cast<uint32_t>(attribute.type), attribute.isUnique, attribute.index,
+                                 attribute.accessorIndex);
             }
         }
-
-        if (texCoordsPrimitive.count > 1) {
-            const auto& rawTexCoords = std::get<std::vector<float>>(texCoordsPrimitive.data);
-            for (int i = 0; i < positionsPrimitive.count; ++i) {
-                vertices[i].texCoord = glm::make_vec2(&rawTexCoords[i * 2]);
-            }
-        }
-
-        const auto rawIndices = std::get<std::vector<uint16_t>>(indicesPrimitive.data);
-        std::vector<uint32_t> indices(indicesPrimitive.count);
-        for (int i = 0; i < indicesPrimitive.count; ++i) {
-            indices[i] = rawIndices[i];
-        }
-
-        Primitive newPrimitive(vertices, indices);
-        if (primitive.contains("material")) {
-            const GLTF::Material gltfMaterial = _getMaterial(primitive["material"]);
-            newPrimitive.setMaterial(std::make_unique<Material>(gltfMaterial.name));
-        }
-
-        primitives.push_back(std::move(newPrimitive));
+        // if (!positionsPrimitive.count || !indicesPrimitive.count) {
+        //     fmt::printf("{}: Missing positions or indices for mesh {}!", m_filePath, meshId);
+        //     continue;
+        // }
+        //
+        // const GLTF::Primitive normalsPrimitive = _getAccessors(primitive["attributes"], "NORMAL");
+        // const GLTF::Primitive texCoordsPrimitive = _getAccessors(primitive["attributes"], "TEXCOORD_0");
+        //
+        // std::vector<Vertex> vertices(positionsPrimitive.count);
+        //
+        // const auto& rawPositions = std::get<std::vector<float>>(positionsPrimitive.data);
+        // // positionsPrimitive.buffer.;
+        // for (int i = 0; i < positionsPrimitive.count; ++i) {
+        //     vertices[i].pos = glm::make_vec3(&rawPositions[i * 3]);
+        //     vertices[i].color = { 1, 1, 1 };  // TODO: is this ok?
+        // }
+        //
+        // if (normalsPrimitive.count > 1) {
+        //     const auto& rawNormals = std::get<std::vector<float>>(normalsPrimitive.data);
+        //     for (int i = 0; i < positionsPrimitive.count; ++i) {
+        //         vertices[i].normal = glm::make_vec3(&rawNormals[i * 3]);
+        //     }
+        // }
+        //
+        // if (texCoordsPrimitive.count > 1) {
+        //     const auto& rawTexCoords = std::get<std::vector<float>>(texCoordsPrimitive.data);
+        //     for (int i = 0; i < positionsPrimitive.count; ++i) {
+        //         vertices[i].texCoord = glm::make_vec2(&rawTexCoords[i * 2]);
+        //     }
+        // }
+        //
+        // const auto rawIndices = std::get<std::vector<uint16_t>>(indicesPrimitive.data);
+        // std::vector<uint32_t> indices(indicesPrimitive.count);
+        // for (int i = 0; i < indicesPrimitive.count; ++i) {
+        //     indices[i] = rawIndices[i];
+        // }
+        //
+        // Primitive newPrimitive(std::move(vertices), std::move(indices));
+        // if (primitive.contains("material")) {
+        //     const GLTF::Material gltfMaterial = _getMaterial(primitive["material"]);
+        //     newPrimitive.setMaterial(std::make_unique<Material>(gltfMaterial.name));
+        // }
+        //
+        // primitives.push_back(std::move(newPrimitive));
     }
 
+    std::vector<Primitive> primitives;
     return std::make_unique<Mesh>(meshName, std::move(primitives));
 }
 
-GLTF::Primitive GLTFLoader::_getPrimitiveBuffer(const nlohmann::json& primitive, const char* key) const {
-    if (!primitive.contains(key)) {
-        return {};
-    }
+// GLTF::Accessor GLTFLoader::_getAccessors(const nlohmann::json& primitive) const {
+//     for (auto accessor : primitive.get<std::vector<GLTF::Accessor>>()) {}
+//     if (!primitive.contains(key)) {
+//         return {};
+//     }
+//
+//     const uint64_t accessorId = primitive[key];
+//
+//     GLTF::Accessor accessor = m_gltf["accessors"][accessorId].get<GLTF::Accessor>();
+    // const uint64_t bufferViewId = accessor["bufferView"];
+    // const uint64_t count = accessor["count"];
 
-    const uint64_t accessorId = primitive[key];
+    // const json bufferView = m_gltf["bufferViews"][accessor.bufferView];
+    // const uint64_t bufferId = bufferView["buffer"];
+    // const uint64_t offset = bufferView.value("byteOffset", 0);
+    // const uint64_t byteSize = bufferView["byteLength"];
 
-    const json accessor = m_gltf["accessors"][accessorId];
-    const uint64_t bufferViewId = accessor["bufferView"];
-    const uint64_t count = accessor["count"];
+    // const std::string type = accessor["type"];
+    // const GLTF::DataType dataType = GLTF::dataTypeMap.at(accessor.type);
 
-    const json bufferView = m_gltf["bufferViews"][bufferViewId];
-    const uint64_t bufferId = bufferView["buffer"];
-    const uint64_t offset = bufferView.value("byteOffset", 0);
-    const uint64_t byteSize = bufferView["byteLength"];
+    // const GLTF::Primitive::Type componentType = accessor.componentType;
+    // const uint8_t* firstElement = &m_files.buffers[bufferId][offset];
+    // const uint8_t* lastElement = firstElement + accessor.size;
 
-    const std::string type = accessor["type"];
-    const GLTF::DataType dataType = GLTF::dataTypeMap.at(type);
+    // std::vector values(firstElement, lastElement);
+    // GLTF::Primitive p(accessor.componentType, std::move(values));
+    // TODO Primitive should not be used. it only contains a buffer? check this
 
-    GLTF::Primitive p{};
-    p.count = count;
-    p.byteSize = byteSize;
-
-    const uint8_t* buffer = m_files.buffers[bufferId].data();
-    const GLTF::ComponentType componentType = accessor["componentType"];
-    switch (componentType) {
-        case GLTF::ComponentType::BYTE: {
-            std::vector<int8_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
-            p.data = std::move(values);
-            break;
-        }
-        case GLTF::ComponentType::UNSIGNED_BYTE: {
-            std::vector<uint8_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
-            p.data = std::move(values);
-            break;
-        }
-        case GLTF::ComponentType::SHORT: {
-            std::vector<int16_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
-            p.data = std::move(values);
-            break;
-        }
-        case GLTF::ComponentType::UNSIGNED_SHORT: {
-            std::vector<uint16_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
-            p.data = std::move(values);
-            break;
-        }
-        case GLTF::ComponentType::UNSIGNED_INT: {
-            std::vector<uint32_t> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
-            p.data = std::move(values);
-            break;
-        }
-        case GLTF::ComponentType::FLOAT: {
-            std::vector<float> values(count * dataType.componentCount);
-            std::memcpy(values.data(), &buffer[offset], byteSize);
-            p.data = std::move(values);
-            break;
-        }
-
-        default:
-            throw std::runtime_error(
-                fmt::format("GLTF: unsupported componentType: {}", static_cast<uint32_t>(componentType)));
-    }
-
-    return p;
-}
+    // std::vector<std::any> values(firstElement, lastElement);
+    // GLTF::DataVariant values(firstElement, lastElement);
+    // p.data = std::move(values);
+    // template<typename T>
+    // std::vector<T> values;
+    // switch (componentType) {
+    //     case GLTF::ComponentType::BYTE: {
+    //         std::vector<int8_t> values(count * dataType.componentCount);
+    //         std::memcpy(values.data(), firstElement, byteSize);
+    //         p.data = std::move(values);
+    //         break;
+    //     }
+    //     case GLTF::ComponentType::UNSIGNED_BYTE: {
+    //         std::vector<uint8_t> values(count * dataType.componentCount);
+    //         std::memcpy(values.data(), firstElement, byteSize);
+    //         p.data = std::move(values);
+    //         break;
+    //     }
+    //     case GLTF::ComponentType::SHORT: {
+    //         std::vector<int16_t> values(count * dataType.componentCount);
+    //         std::memcpy(values.data(), firstElement, byteSize);
+    //         p.data = std::move(values);
+    //         break;
+    //     }
+    //     case GLTF::ComponentType::UNSIGNED_SHORT: {
+    //         std::vector<uint16_t> values(count * dataType.componentCount);
+    //         std::memcpy(values.data(), firstElement, byteSize);
+    //         p.data = std::move(values);
+    //         break;
+    //     }
+    //     case GLTF::ComponentType::UNSIGNED_INT: {
+    //         std::vector<uint32_t> values(count * dataType.componentCount);
+    //         std::memcpy(values.data(), firstElement, byteSize);
+    //         p.data = std::move(values);
+    //         break;
+    //     }
+    //     case GLTF::ComponentType::FLOAT: {
+    //         std::vector<float> values(firstElement, firstElement + count * dataType.componentCount);
+    //         // for (int i = 0; i < MAX; ++i) {
+    //         //
+    //         // }
+    //         std::memcpy(values.data(), firstElement, byteSize);
+    //         p.data = std::move(values);
+    //         break;
+    //     }
+    //
+    //     default:
+    //         throw std::runtime_error(
+    //             fmt::format("GLTF: unsupported componentType: {}", static_cast<uint32_t>(componentType)));
+    // }
+//
+//     return p;
+// }
 
 GLTF::Material GLTFLoader::_getMaterial(uint64_t materialId) const {
     json rawMaterial = m_gltf["materials"][materialId];

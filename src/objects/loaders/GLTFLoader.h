@@ -8,6 +8,7 @@
 #include "GLTF.h"
 #include "objects/Mesh.h"
 #include "objects/Primitive.h"
+#include "objects/gltf/Accessor.h"
 
 class Model;
 
@@ -30,13 +31,14 @@ private:
 
     [[nodiscard]]
     std::unique_ptr<Mesh> _buildMesh(uint64_t meshId) const;
-    GLTF::Primitive _getPrimitiveBuffer(const nlohmann::json& primitive, const char* key) const;
+    [[nodiscard]]
     GLTF::Material _getMaterial(uint64_t materialId) const;
-    // void loadVertices();
 
     std::string m_filePath;
     nlohmann::json m_gltf;
     Files m_files;
     std::unique_ptr<Model> m_model;
+
+    std::vector<GLTF::Accessor> m_accessors;
 };
 

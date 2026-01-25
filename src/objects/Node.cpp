@@ -3,21 +3,21 @@
 
 // chatgpt node rootnode meshes and localtransform TRS
 
-Node::Node(const std::weak_ptr<Node>& parent, std::unique_ptr<Mesh> mesh) : m_parent(parent), m_mesh(std::move(mesh)) {}
+Node::Node(const std::weak_ptr<Node>& parent, const std::shared_ptr<Mesh>& mesh) : m_parent(parent), m_mesh(mesh) {}
 
-Node::Node(std::unique_ptr<Mesh> mesh) : m_mesh(std::move(mesh)) {}
+Node::Node(const std::shared_ptr<Mesh>& mesh) : m_mesh(mesh) {}
 
 void Node::setParent(const std::weak_ptr<Node>& parent) {
     m_parent = parent;
 }
 
-void Node::addChild(const std::shared_ptr<Node>& other) {
+void Node::addChild(std::unique_ptr<Node> other) {
     other->setParent(weak_from_this());
-    m_children.push_back(other);
+    m_children.push_back(std::move(other));
 }
 
-void Node::setMesh(std::unique_ptr<Mesh> mesh) {
-    m_mesh = std::move(mesh);
+void Node::setMesh(const std::shared_ptr<Mesh>& mesh) {
+    m_mesh = mesh;
 }
 
 const Transform& Node::getTransform() const {
@@ -38,4 +38,9 @@ void Node::rotate(const float angle, const glm::vec3& axis) {
 
 void Node::scale(const glm::vec3& v) {
     m_transform.scale(v);
+}
+
+void Node::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout, const glm::mat4& parentTransform) const {
+    const glm::mat4 localMatrix = parentTransform * m_transform.getMatrix();
+    m_mesh->draw(commandBuffer, pipelineLayout, localMatrix);
 }

@@ -51,7 +51,7 @@ void Camera::setPosition(const glm::vec3& v) {
 
 void Camera::update(const float delta) {
     float speed = m_speed;
-    if (Keyboard::isModPressed(KMOD_SHIFT)) {
+    if (Keyboard::isModPressed(KMOD_LCTRL)) {
         speed *= 0.07;
     }
 
@@ -69,6 +69,14 @@ void Camera::update(const float delta) {
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_D)) {
         m_node.translate({ speed, 0.0f, 0.0f });
+    }
+
+    if (Keyboard::isKeyPressed(SDL_SCANCODE_SPACE)) {
+        m_node.translate({ 0.0f, speed, 0.0f });
+    }
+
+    if (Keyboard::isKeyPressed(SDL_SCANCODE_LSHIFT)) {
+        m_node.translate({ 0.0f, -speed, 0.0f });
     }
 
     const glm::vec2& mouseDelta = Mouse::getDelta();

@@ -7,8 +7,10 @@
 #include <stdexcept>
 #include <utility>
 
-#include "gfx/vk/types/VulkanContext.h"
+#include "common/Transform.h"
 #include "gfx/vk/gpu_resources/Buffer.h"
+#include "gfx/vk/types/ModelConstants.h"
+#include "gfx/vk/types/VulkanContext.h"
 
 // Mesh::Mesh(const char* modelPath) {
 //     tinyobj::attrib_t attrib;
@@ -51,13 +53,30 @@
 //     m_createIndexBuffer();
 // }
 
-Primitive::Primitive(const std::vector<Vertex>& vertices,
-                     const std::vector<uint32_t>& indices) {
-    m_vertices = vertices;
-    m_indices = indices;
-
+Primitive::Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
+    : m_vertices(std::move(vertices)), m_indices(std::move(indices)) {
     m_createVertexBuffer();
     m_createIndexBuffer();
+}
+
+void Primitive::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout,
+                     const glm::mat4& transform) const {
+    const std::array buffers = { m_vertexBuffer->buffer() };
+    constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
+
+    vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
+    vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->buffer(), 0, VK_INDEX_TYPE_UINT32);
+
+    // const glm::mat4 modelMatrix = m_transform.getMatrix();
+    const glm::mat4 normalMatrix = Transform::getNormalMatrix(transform);
+    const ModelConstants constants{
+        transform,
+        normalMatrix,
+    };
+
+    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
+                       &constants);
+    vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
 }
 
 void Primitive::destroy() const {

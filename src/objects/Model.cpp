@@ -149,24 +149,7 @@ const Texture::ID& Model::getTextureID() const {
 // }
 
 void Model::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const {
-    // for (const auto& mesh : m_meshes) {
-    // const std::array buffers = { m_meshes[0]->getVertexBuffer().buffer() };
-    // constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
-    //
-    // vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
-    // vkCmdBindIndexBuffer(commandBuffer, m_meshes[0]->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
-    //
-    // const glm::mat4 modelMatrix = m_transform.getMatrix();
-    // const glm::mat4 normalMatrix = Transform::getNormalMatrix(modelMatrix);
-    // const ModelConstants constants{
-    //     modelMatrix,
-    //     normalMatrix,
-    // };
-    //
-    // vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
-    //                    &constants);
-    // vkCmdDrawIndexed(commandBuffer, m_meshes[0]->getIndices().size(), 1, 0, 0, 0);
-    // }
+    m_rootNode->draw(commandBuffer, pipelineLayout, glm::mat4(1.0f));
 }
 
 void Model::translate(const glm::vec3& v) const {

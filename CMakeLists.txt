@@ -72,6 +72,12 @@ add_executable(VKTest
         src/objects/Node.h
         src/objects/Primitive.cpp
         src/objects/Primitive.h
+        src/objects/gltf/Primitive.cpp
+        src/objects/gltf/Primitive.h
+        src/objects/gltf/Accessor.cpp
+        src/objects/gltf/Accessor.h
+        src/objects/gltf/Attribute.cpp
+        src/objects/gltf/Attribute.h
         src/objects/loaders/GLTFLoader.cpp
         src/objects/loaders/GLTFLoader.h
         src/common/Transform.h
@@ -82,6 +88,7 @@ add_executable(VKTest
         src/objects/loaders/GLTF.h
         src/gfx/vk/types/ModelConstants.h
         src/common/Transform.cpp
+        src/objects/gltf/Attribute.h
 )
 
 target_include_directories(VKTest PRIVATE

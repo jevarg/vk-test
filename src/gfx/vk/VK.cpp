@@ -52,7 +52,7 @@ void VK::m_mainLoop() {
         Mouse::update();
 
         m_camera->update(0);
-        // m_models[0].rotate(0.02, { 0, 1, 0 });
+        m_models[0].rotate(0.02, { 0, 1, 0 });
 
         m_drawFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -172,6 +172,7 @@ void VK::m_createVKInstance() {
 
     instanceExtensions.push_back("VK_KHR_portability_enumeration");
     instanceExtensions.push_back("VK_KHR_get_physical_device_properties2");
+    // instanceExtensions.push_back("VK_KHR_portability_subset");
 
     VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -636,11 +637,9 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = m_swapChainExtent;
 
-    // clang-format off
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color = {{ 0, 0, 0, 1.0f }};
     clearValues[1].depthStencil = { 1.0f, 0 };
-    // clang-format on
 
     renderPassInfo.clearValueCount = clearValues.size();
     renderPassInfo.pClearValues = clearValues.data();
@@ -691,8 +690,8 @@ void VK::m_initVulkan() {
     m_createDescriptorSetLayout();
     m_createDescriptorPool();
 
-    m_textures.emplace_back(std::vector{ "./assets/models/avocado/avocado_baseColor.png" }, m_descriptorPool,
-                            m_textureDescriptorSetLayout);
+    // m_textures.emplace_back(std::vector{ "./assets/models/avocado/avocado_baseColor.png" }, m_descriptorPool,
+    //                         m_textureDescriptorSetLayout);
     // m_textures.emplace_back(std::vector{"./assets/viking_room.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
     m_textures.emplace_back(std::vector{
                                 "./assets/skybox/hl1/right.bmp",
@@ -702,11 +701,13 @@ void VK::m_initVulkan() {
                                 "./assets/skybox/hl1/back.bmp",
                                 "./assets/skybox/hl1/front.bmp",
                             }, m_descriptorPool, m_textureDescriptorSetLayout);
+    m_textures.emplace_back(std::vector{"./assets/souley.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
 
     // m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
-    m_models.emplace_back(GLTFLoader("./assets/models/triangles/SimpleMeshes.gltf"));
-    m_models[0].rotate(3.14116, { 0, 1, 0 });
-    m_skybox = std::make_unique<Cube>(m_textures[1].getID());
+    // m_models.emplace_back(GLTFLoader("./assets/models/triangles/SimpleMeshes.gltf"));
+    // m_models[0].rotate(3.14116, { 0, 1, 0 });
+    m_skybox = std::make_unique<Cube>(m_textures[0].getID());
+    m_models.emplace_back(Cube(m_textures[0].getID()));
 
     // m_createDescriptorSets();
     m_createGraphicsPipeline();
@@ -718,7 +719,7 @@ void VK::m_initVulkan() {
     const float aspectRatio =
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
     m_camera = std::make_unique<Camera>(aspectRatio, m_descriptorPool, m_sceneDescriptorSetLayout);
-    m_camera->setPosition({ 0.0f, 0.0f, 0.2f });
+    m_camera->setPosition({ 0.0f, 0.2f, 5.0f });
 
     fmt::println("Good to go :)");
 }
