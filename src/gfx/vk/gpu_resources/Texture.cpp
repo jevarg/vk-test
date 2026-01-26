@@ -10,7 +10,11 @@
 #include "Buffer.h"
 #include "gfx/vk/vkutil.h"
 
-Texture::Texture(const std::vector<const char *> &filenames, const VkDescriptorPool &descriptorPool,
+Texture::Texture(const std::string &filename, const VkDescriptorPool &descriptorPool,
+                 const VkDescriptorSetLayout &descriptorSetLayout)
+    : Texture(std::array{ filename }, descriptorPool, descriptorSetLayout) {}
+
+Texture::Texture(const std::span<const std::string> filenames, const VkDescriptorPool &descriptorPool,
                  const VkDescriptorSetLayout &descriptorSetLayout) {
     int width = 0;
     int height = 0;
@@ -20,7 +24,7 @@ Texture::Texture(const std::vector<const char *> &filenames, const VkDescriptorP
     uint8_t *mappedBuffer = nullptr;
 
     for (int i = 0; i < layersCount; ++i) {
-        stbi_uc *pixels = stbi_load(filenames[i], &width, &height, &channels, STBI_rgb_alpha);
+        stbi_uc *pixels = stbi_load(filenames[i].c_str(), &width, &height, &channels, STBI_rgb_alpha);
         if (pixels == nullptr) {
             throw std::runtime_error(fmt::format("failed to load texture {}", filenames[i]));
         }
@@ -65,6 +69,10 @@ Texture::Texture(const std::vector<const char *> &filenames, const VkDescriptorP
     m_createSampler();
     m_createDescriptorSet(descriptorPool, descriptorSetLayout);
 }
+
+Texture::Texture(const std::initializer_list<std::string> filenames, const VkDescriptorPool &descriptorPool,
+                 const VkDescriptorSetLayout &descriptorSetLayout)
+    : Texture(std::vector(filenames.begin(), filenames.end()), descriptorPool, descriptorSetLayout) {}
 
 void Texture::m_createDescriptorSet(const VkDescriptorPool &descriptorPool,
                                     const VkDescriptorSetLayout &descriptorSetLayout) {

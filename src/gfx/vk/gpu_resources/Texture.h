@@ -1,6 +1,9 @@
 #pragma once
 
 #include <memory>
+#include <span>
+#include <string>
+#include <initializer_list>
 
 #include "Image.h"
 #include "Buffer.h"
@@ -9,7 +12,11 @@ class Texture {
 public:
     typedef size_t ID;
 
-    explicit Texture(const std::vector<const char*>& filenames, const VkDescriptorPool& descriptorPool,
+    explicit Texture(const std::string& filename, const VkDescriptorPool& descriptorPool,
+                     const VkDescriptorSetLayout& descriptorSetLayout);
+    explicit Texture(std::span<const std::string> filenames, const VkDescriptorPool& descriptorPool,
+                     const VkDescriptorSetLayout& descriptorSetLayout);
+    explicit Texture(std::initializer_list<std::string> filenames, const VkDescriptorPool& descriptorPool,
                      const VkDescriptorSetLayout& descriptorSetLayout);
     Texture(Texture&& other) noexcept = default;
 

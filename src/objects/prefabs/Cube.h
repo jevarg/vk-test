@@ -7,4 +7,5 @@ class Cube : public Model {
 
 public:
     explicit Cube(Texture::ID textureID);
+    explicit Cube(TextureHandle textureHandle);
 };

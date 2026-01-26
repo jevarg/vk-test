@@ -11,9 +11,10 @@
 #include <stdexcept>
 #include <thread>
 
-#include "gpu_resources/Shader.h"
 #include "input/Keyboard.h"
 #include "input/Mouse.h"
+#include "gfx/TextureManager.h"
+#include "gpu_resources/Shader.h"
 #include "objects/prefabs/Cube.h"
 #include "objects/prefabs/Plane.h"
 #include "types/ModelConstants.h"
@@ -648,10 +649,10 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
 
     m_pipelines.skybox->bind(commandBuffer);
 
-    const Texture& skyTex = m_textures[m_skybox->getTextureID()];
+    const auto skyTex = m_textureManager->get(m_skybox->getTextureHandle());
     const std::array descriptorSets{
         m_camera->getDescriptorSet(),
-        skyTex.getDescriptorSet()
+        skyTex->getDescriptorSet()
     };
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, descriptorSets.size(),
@@ -667,9 +668,9 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
 
 void VK::m_drawModels(VkCommandBuffer commandBuffer) const {
     for (const auto& model : m_models) {
-        const Texture& texture = m_textures[model.getTextureID()];
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 1, 1,
-                                &texture.getDescriptorSet(), 0, nullptr);
+        // const Texture& texture = m_textures[model.getTextureID()];
+        // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 1, 1,
+        //                         &texture.getDescriptorSet(), 0, nullptr);
 
         model.draw(commandBuffer, m_pipelineLayout);
     }
@@ -693,21 +694,34 @@ void VK::m_initVulkan() {
     // m_textures.emplace_back(std::vector{ "./assets/models/avocado/avocado_baseColor.png" }, m_descriptorPool,
     //                         m_textureDescriptorSetLayout);
     // m_textures.emplace_back(std::vector{"./assets/viking_room.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
-    m_textures.emplace_back(std::vector{
-                                "./assets/skybox/hl1/right.bmp",
-                                "./assets/skybox/hl1/left.bmp",
-                                "./assets/skybox/hl1/top.bmp",
-                                "./assets/skybox/hl1/bottom.bmp",
-                                "./assets/skybox/hl1/back.bmp",
-                                "./assets/skybox/hl1/front.bmp",
-                            }, m_descriptorPool, m_textureDescriptorSetLayout);
-    m_textures.emplace_back(std::vector{"./assets/souley.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
+    // m_textures.emplace_back({
+    //     "./assets/skybox/hl1/right.bmp",
+    //     "./assets/skybox/hl1/left.bmp",
+    //     "./assets/skybox/hl1/top.bmp",
+    //     "./assets/skybox/hl1/bottom.bmp",
+    //     "./assets/skybox/hl1/back.bmp",
+    //     "./assets/skybox/hl1/front.bmp",
+    // }, m_descriptorPool, m_textureDescriptorSetLayout);
+    // m_textures.emplace_back(std::vector{"./assets/souley.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
 
     // m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
     // m_models.emplace_back(GLTFLoader("./assets/models/triangles/SimpleMeshes.gltf"));
     // m_models[0].rotate(3.14116, { 0, 1, 0 });
-    m_skybox = std::make_unique<Cube>(m_textures[0].getID());
-    m_models.emplace_back(Cube(m_textures[0].getID()));
+
+    m_textureManager = std::make_unique<TextureManager>(m_descriptorPool);
+    auto skyboxTextureHandle = m_textureManager->loadCubeMap({
+        "./assets/skybox/hl1/right.bmp",
+        "./assets/skybox/hl1/left.bmp",
+        "./assets/skybox/hl1/top.bmp",
+        "./assets/skybox/hl1/bottom.bmp",
+        "./assets/skybox/hl1/back.bmp",
+        "./assets/skybox/hl1/front.bmp",
+    });
+
+    auto souleyTextureHandle = m_textureManager->loadTexture("./assets/souley.png");
+
+    m_skybox = std::make_unique<Cube>(skyboxTextureHandle);
+    m_models.emplace_back(Cube(souleyTextureHandle));
 
     // m_createDescriptorSets();
     m_createGraphicsPipeline();
@@ -735,9 +749,9 @@ void VK::m_destroyVulkan() const {
     vkDestroyDescriptorSetLayout(vkContext.getDevice(), m_textureDescriptorSetLayout, nullptr);
 
     m_depthImage->destroy();
-    for (const auto& texture : m_textures) {
-        texture.destroy();
-    }
+    // for (const auto& texture : m_textures) {
+    //     texture.destroy();
+    // }
 
     m_skybox->destroy();
     for (const auto& model : m_models) {

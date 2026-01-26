@@ -1,4 +1,5 @@
 #include "Plane.h"
+
 #include "objects/Primitive.h"
 #include "objects/Mesh.h"
 
@@ -18,4 +19,4 @@ std::unique_ptr<Mesh> Plane::_createPlaneMesh() {
     return std::make_unique<Mesh>("Plane", std::move(primitives));
 }
 
-Plane::Plane(const Texture::ID textureID) : Model(std::make_unique<Node>(_createPlaneMesh()), textureID) {}
+Plane::Plane(const TextureHandle textureHandle) : Model(std::make_unique<Node>(_createPlaneMesh()), textureHandle) {}

@@ -38,7 +38,7 @@ GLTFLoader::GLTFLoader(const char* filePath) : m_filePath(filePath) {
 
         uint64_t meshId = rootNode["mesh"];
         std::unique_ptr<Node> node = std::make_unique<Node>(_buildMesh(meshId));
-        m_model = std::make_unique<Model>(std::move(node), 0);
+        // m_model = std::make_unique<Model>(std::move(node), 0);
         // auto gltfMesh = m_gltf["meshes"][meshId];
         // const std::string meshName = gltfMesh.value("name", "unnamed");
         // for (const auto& primitive : gltfMesh["primitives"]) {

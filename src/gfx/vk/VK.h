@@ -12,6 +12,8 @@
 #include "objects/prefabs/Cube.h"
 #include "pipeline/Pipeline.h"
 
+class TextureManager;
+
 class VK {
    public:
     explicit VK(SDL_Window* window);
@@ -46,7 +48,7 @@ class VK {
 
     std::unique_ptr<DepthImage> m_depthImage;
 
-    std::vector<Texture> m_textures;
+    std::unique_ptr<TextureManager> m_textureManager;
     std::vector<Model> m_models;
     std::unique_ptr<Cube> m_skybox;
 

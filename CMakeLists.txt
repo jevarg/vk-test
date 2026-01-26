@@ -34,6 +34,8 @@ add_executable(VKTest
 
         src/gfx/Camera.cpp
         src/gfx/Camera.h
+        src/gfx/TextureManager.cpp
+        src/gfx/TextureManager.h
         src/gfx/vk/OneTimeCommand.cpp
         src/gfx/vk/OneTimeCommand.h
         src/gfx/vk/VK.cpp
@@ -72,23 +74,24 @@ add_executable(VKTest
         src/objects/Node.h
         src/objects/Primitive.cpp
         src/objects/Primitive.h
-        src/objects/gltf/Primitive.cpp
-        src/objects/gltf/Primitive.h
-        src/objects/gltf/Accessor.cpp
-        src/objects/gltf/Accessor.h
-        src/objects/gltf/Attribute.cpp
-        src/objects/gltf/Attribute.h
-        src/objects/loaders/GLTFLoader.cpp
-        src/objects/loaders/GLTFLoader.h
-        src/common/Transform.h
-        src/input/Keyboard.h
-        src/input/Mouse.h
+#        src/objects/gltf/Primitive.cpp
+#        src/objects/gltf/Primitive.h
+#        src/objects/gltf/Accessor.cpp
+#        src/objects/gltf/Accessor.h
+#        src/objects/gltf/Attribute.cpp
+#        src/objects/gltf/Attribute.h
+#        src/objects/loaders/GLTFLoader.cpp
+#        src/objects/loaders/GLTFLoader.h
         src/objects/prefabs/Cube.cpp
         src/objects/prefabs/Cube.h
         src/objects/loaders/GLTF.h
-        src/gfx/vk/types/ModelConstants.h
-        src/common/Transform.cpp
         src/objects/gltf/Attribute.h
+
+        src/input/Keyboard.h
+        src/input/Mouse.h
+
+        src/common/Transform.cpp
+        src/common/Transform.h
 )
 
 target_include_directories(VKTest PRIVATE
