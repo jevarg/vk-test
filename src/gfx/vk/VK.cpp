@@ -207,7 +207,7 @@ void VK::m_createSurface() {
 
 VkSurfaceFormatKHR VK::m_chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     for (const auto& availableFormat : availableFormats) {
-        if (availableFormat.format == VK_FORMAT_B8G8R8_SRGB &&
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
             availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
         }
@@ -668,9 +668,9 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
 
 void VK::m_drawModels(VkCommandBuffer commandBuffer) const {
     for (const auto& model : m_models) {
-        // const Texture& texture = m_textures[model.getTextureID()];
-        // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 1, 1,
-        //                         &texture.getDescriptorSet(), 0, nullptr);
+        const auto texture = m_textureManager->get(model.getTextureHandle());
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 1, 1,
+                                &texture->getDescriptorSet(), 0, nullptr);
 
         model.draw(commandBuffer, m_pipelineLayout);
     }
@@ -718,10 +718,11 @@ void VK::m_initVulkan() {
         "./assets/skybox/hl1/front.bmp",
     });
 
-    auto souleyTextureHandle = m_textureManager->loadTexture("./assets/souley.png");
+    auto textureHandle = m_textureManager->loadTexture("./assets/crate.png");
 
     m_skybox = std::make_unique<Cube>(skyboxTextureHandle);
-    m_models.emplace_back(Cube(souleyTextureHandle));
+    m_models.emplace_back(Cube(textureHandle));
+    // m_models[0].rotate(M_PI_2, {1, 0, 0});
 
     // m_createDescriptorSets();
     m_createGraphicsPipeline();

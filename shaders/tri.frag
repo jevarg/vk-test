@@ -27,8 +27,9 @@ void main() {
     vec4 ambient = vec4(ambientStrength * lightColor, 1.0);
     float diffuse = max(dot(normal, lightDir), 0.0);
 
-    outColor = (ambient + diffuse) * texColor;
-//    outColor = ambient * texColor;
+//    outColor = (ambient + diffuse) * texColor;
+    outColor = vec4(fragColor, 1) * texColor;
+//    outColor = texColor;
 
 //    outColor = vec4(1, 1, 1, 1);
 //    outColor *= vec4(I, I, I, 1);
