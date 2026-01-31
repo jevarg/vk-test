@@ -9,8 +9,11 @@ public:
 
     void destroy() const;
 
+    [[nodiscard]]
     const TextureHandle& getTextureHandle() const;
-    void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
+
+    [[nodiscard]]
+    Node* getRootNode() const;
 
     void translate(const glm::vec3& v) const;
     void rotate(float angle, const glm::vec3& axis) const;

@@ -93,8 +93,13 @@ class VK {
     void m_createDescriptorPool();
     // void m_createDescriptorSets();
 
+    // Future Renderer
     void m_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
     void m_drawModels(VkCommandBuffer commandBuffer) const;
+    void m_drawMesh(VkCommandBuffer commandBuffer, const Mesh* mesh);
+
+    void m_renderNode(VkCommandBuffer commandBuffer, const Node* node) const;
+    void m_renderModel(VkCommandBuffer commandBuffer, const Model& model) const;
 
     void m_initVulkan();
     void m_destroyVulkan() const;

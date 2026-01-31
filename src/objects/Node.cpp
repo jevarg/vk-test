@@ -16,12 +16,29 @@ void Node::addChild(std::unique_ptr<Node> other) {
     m_children.push_back(std::move(other));
 }
 
+std::shared_ptr<Mesh> Node::getMesh() const {
+    return m_mesh;
+}
+
 void Node::setMesh(const std::shared_ptr<Mesh>& mesh) {
     m_mesh = mesh;
 }
 
 const Transform& Node::getTransform() const {
     return m_transform;
+}
+
+glm::mat4 Node::getLocalMatrix() const {
+    return m_transform.getMatrix();
+}
+
+glm::mat4 Node::getWorldMatrix() const {
+    const auto parent = m_parent.lock();
+    if (!parent) {
+        return m_transform.getMatrix();
+    }
+
+    return parent->getWorldMatrix() * m_transform.getMatrix();
 }
 
 void Node::setPosition(const glm::vec3& v) {
@@ -40,7 +57,7 @@ void Node::scale(const glm::vec3& v) {
     m_transform.scale(v);
 }
 
-void Node::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout, const glm::mat4& parentTransform) const {
-    const glm::mat4 localMatrix = parentTransform * m_transform.getMatrix();
-    m_mesh->draw(commandBuffer, pipelineLayout, localMatrix);
-}
+// void Node::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout, const glm::mat4& parentTransform) const {
+//     const glm::mat4 localMatrix = parentTransform * m_transform.getMatrix();
+    // m_mesh->draw(commandBuffer, pipelineLayout, localMatrix);
+// }

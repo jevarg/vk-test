@@ -7,7 +7,12 @@ class Texture;
 class Buffer {
 public:
     Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+
+    Buffer(const Buffer& other) = delete;
+    Buffer& operator=(const Buffer& other) = delete;
+
     Buffer(Buffer&& other) noexcept = default;
+    Buffer& operator=(Buffer&& other) noexcept = default;
 
     void destroy() const;
 
@@ -30,7 +35,7 @@ public:
     void copyTo(const Texture& texture, uint32_t layerCount) const;
 
 private:
-    const VkDeviceSize m_size;
+    VkDeviceSize m_size;
 
     VkBuffer m_buffer = VK_NULL_HANDLE;
     VkDeviceMemory m_bufferMemory = VK_NULL_HANDLE;

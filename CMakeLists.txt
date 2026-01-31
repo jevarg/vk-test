@@ -72,8 +72,6 @@ add_executable(VKTest
         src/objects/Material.h
         src/objects/Node.cpp
         src/objects/Node.h
-        src/objects/Primitive.cpp
-        src/objects/Primitive.h
 #        src/objects/gltf/Primitive.cpp
 #        src/objects/gltf/Primitive.h
 #        src/objects/gltf/Accessor.cpp

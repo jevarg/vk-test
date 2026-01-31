@@ -55,10 +55,14 @@ std::unique_ptr<Mesh> Cube::_createCubeMesh() {
         20, 21, 22, 22, 23, 20,
     };
 
-    std::vector<Primitive> primitives;
-    primitives.emplace_back(vertices, indices);
-
-    return std::make_unique<Mesh>("Cube", std::move(primitives));
+    return std::make_unique<Mesh>("Cube", vertices, indices, std::vector<Submesh>({
+        {0, 6},
+        {6, 6},
+        {12, 6},
+        {18, 6},
+        {24, 6},
+        {30, 6},
+    }));
 }
 
 Cube::Cube(const TextureHandle textureHandle) : Model(std::make_unique<Node>(_createCubeMesh()), textureHandle) {}

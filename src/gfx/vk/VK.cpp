@@ -11,10 +11,12 @@
 #include <stdexcept>
 #include <thread>
 
-#include "input/Keyboard.h"
-#include "input/Mouse.h"
+#include "gfx/Camera.h"
 #include "gfx/TextureManager.h"
 #include "gpu_resources/Shader.h"
+#include "gpu_resources/Texture.h"
+#include "input/Keyboard.h"
+#include "input/Mouse.h"
 #include "objects/prefabs/Cube.h"
 #include "objects/prefabs/Plane.h"
 #include "types/ModelConstants.h"
@@ -624,6 +626,32 @@ void VK::m_createDescriptorPool() {
              vkCreateDescriptorPool(VulkanContext::get().getDevice(), &poolInfo, nullptr, &m_descriptorPool));
 }
 
+void VK::m_renderNode(VkCommandBuffer commandBuffer, const Node* node) const {
+    const auto mesh = node->getMesh();
+    const std::array buffers = { mesh->getVertexBuffer().buffer() };
+    constexpr std::array<VkDeviceSize, buffers.size()> offsets = { 0 };
+
+    vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), buffers.data(), offsets.data());
+    vkCmdBindIndexBuffer(commandBuffer, mesh->getIndexBuffer().buffer(), 0, VK_INDEX_TYPE_UINT32);
+
+    const glm::mat4 normalMatrix = Transform::getNormalMatrix(node->getWorldMatrix());
+    const ModelConstants constants{
+        node->getWorldMatrix(),
+        normalMatrix,
+    };
+
+    vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
+                       &constants);
+
+    for (const auto& submesh : mesh->getSubmeshes()) {
+        vkCmdDrawIndexed(commandBuffer, submesh.indexCount, 1, submesh.indexOffset, 0, 0);
+    }
+}
+
+void VK::m_renderModel(VkCommandBuffer commandBuffer, const Model& model) const {
+    m_renderNode(commandBuffer, model.getRootNode());
+}
+
 void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t imageIndex) const {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -657,23 +685,21 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, descriptorSets.size(),
                             descriptorSets.data(), 0, nullptr);
-    m_skybox->draw(commandBuffer, m_pipelineLayout);
+    m_renderModel(commandBuffer, *m_skybox);
 
     m_pipelines.scene->bind(commandBuffer);
-    m_drawModels(commandBuffer);
-    vkCmdEndRenderPass(commandBuffer);
 
-    VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));
-}
-
-void VK::m_drawModels(VkCommandBuffer commandBuffer) const {
     for (const auto& model : m_models) {
         const auto texture = m_textureManager->get(model.getTextureHandle());
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 1, 1,
                                 &texture->getDescriptorSet(), 0, nullptr);
 
-        model.draw(commandBuffer, m_pipelineLayout);
+        m_renderModel(commandBuffer, model);
     }
+
+    vkCmdEndRenderPass(commandBuffer);
+
+    VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));
 }
 
 void VK::m_initVulkan() {

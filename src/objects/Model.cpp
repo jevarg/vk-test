@@ -9,17 +9,14 @@ Model::Model(std::unique_ptr<Node> rootNode, const TextureHandle textureHandle)
     : m_textureHandle(textureHandle), m_rootNode(std::move(rootNode)) {}
 
 void Model::destroy() const {
-    // for (const auto& mesh : m_meshes) {
-    //     mesh->destroy();
-    // }
 }
 
 const TextureHandle& Model::getTextureHandle() const {
     return m_textureHandle;
 }
 
-void Model::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const {
-    m_rootNode->draw(commandBuffer, pipelineLayout, glm::mat4(1.0f));
+Node* Model::getRootNode() const {
+    return m_rootNode.get();
 }
 
 void Model::translate(const glm::vec3& v) const {
