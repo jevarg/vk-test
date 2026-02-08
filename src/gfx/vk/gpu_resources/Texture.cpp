@@ -136,17 +136,8 @@ void Texture::destroy() const {
     vkDestroySampler(VulkanContext::get().getDevice(), m_sampler, nullptr);
 }
 
-// void Texture::bind(const VkCommandBuffer &commandBuffer, const VkPipelineLayout &pipelineLayout) const {
-//     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
-//                             &m_descriptorSet, 0, nullptr);
-// }
-
 const Image &Texture::getImage() const {
     return *m_image;
-}
-
-size_t Texture::getID() const {
-    return m_id;
 }
 
 const VkDescriptorSet &Texture::getDescriptorSet() const {

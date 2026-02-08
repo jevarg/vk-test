@@ -1,31 +1,16 @@
 #include "Mesh.h"
 
-#include <utility>
-
-// Mesh::Mesh(std::string name, std::vector<Primitive> primitives)
-//     : Mesh(std::move(name), std::move(primitives), {}) {
-//     m_submeshes.emplace_back(0, primitives.size());
-// }
-//
-// Mesh::Mesh(std::string name, std::vector<Primitive> primitives, std::vector<Submesh> submeshes)
-// : m_name(std::move(name)), m_primitives(std::move(primitives)), m_submeshes(std::move(submeshes)) {}
-
-// void Mesh::draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout,
-//                 const glm::mat4& worldTransform) const {
-//     for (const auto& primitive : m_primitives) {
-//         primitive.draw(commandBuffer, pipelineLayout, worldTransform);
-//     }
-// }
-
-Mesh::Mesh(std::string name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
-    : Mesh(std::move(name), vertices, indices, {}) {}
+Mesh::Mesh(std::string name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
+           const std::vector<Handle<BasicMaterial>>& materials)
+    : Mesh(std::move(name), vertices, indices, materials, {{}}) {}
 
 Mesh::Mesh(std::string name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
-           std::vector<Submesh> submeshes)
+           const std::vector<Handle<BasicMaterial>>& materials, const std::vector<Submesh>& submeshes)
     : m_name(std::move(name)),
       m_vertexBuffer(m_createVertexBuffer(vertices)),
       m_indexBuffer(m_createIndexBuffer(indices)),
-      m_submeshes(std::move(submeshes)) {}
+      m_materials(materials),
+      m_submeshes(submeshes) {}
 
 const Buffer& Mesh::getVertexBuffer() const {
     return m_vertexBuffer;
@@ -37,6 +22,10 @@ const Buffer& Mesh::getIndexBuffer() const {
 
 const std::vector<Submesh>& Mesh::getSubmeshes() const {
     return m_submeshes;
+}
+
+const std::vector<Handle<BasicMaterial>>& Mesh::getMaterials() const {
+    return m_materials;
 }
 
 Buffer Mesh::m_createVertexBuffer(const std::vector<Vertex>& vertices) const {

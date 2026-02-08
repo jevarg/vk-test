@@ -3,8 +3,17 @@
 #include "../Model.h"
 
 class Cube : public Model {
-    static std::unique_ptr<Mesh> _createCubeMesh();
+    struct Materials {
+        Handle<BasicMaterial> left;
+        Handle<BasicMaterial> right;
+        Handle<BasicMaterial> bottom;
+        Handle<BasicMaterial> top;
+        Handle<BasicMaterial> back;
+        Handle<BasicMaterial> front;
+    };
+
+    static std::unique_ptr<Mesh> _createCubeMesh(const Materials& materials);
 
 public:
-    explicit Cube(TextureHandle textureHandle);
+    explicit Cube(const Materials& materials);
 };

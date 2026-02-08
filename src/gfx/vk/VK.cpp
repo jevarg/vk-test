@@ -12,8 +12,8 @@
 #include <thread>
 
 #include "gfx/Camera.h"
+#include "gfx/MaterialManager.h"
 #include "gfx/TextureManager.h"
-#include "gpu_resources/Shader.h"
 #include "gpu_resources/Texture.h"
 #include "input/Keyboard.h"
 #include "input/Mouse.h"
@@ -33,6 +33,8 @@ VK::VK(SDL_Window* window) {
     Keyboard::init();
     m_window = window;
 }
+
+VK::~VK() {}
 
 void VK::run() {
     m_initVulkan();
@@ -620,7 +622,7 @@ void VK::m_createDescriptorPool() {
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = 3; // TODO: Do that
+    poolInfo.maxSets = m_swapChainImages.size(); // TODO: Do that
 
     VK_CHECK("failed to create descriptor pool",
              vkCreateDescriptorPool(VulkanContext::get().getDevice(), &poolInfo, nullptr, &m_descriptorPool));
@@ -643,7 +645,19 @@ void VK::m_renderNode(VkCommandBuffer commandBuffer, const Node* node) const {
     vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
                        &constants);
 
+    const auto& materials = mesh->getMaterials();
     for (const auto& submesh : mesh->getSubmeshes()) {
+        const auto material = m_materialManager->get(materials[submesh.materialIndex]);
+        const auto texture = m_textureManager->get(material->getTexture());
+        const std::array descriptorSets{
+            m_camera->getDescriptorSet(),
+            texture->getDescriptorSet()
+        };
+
+        m_pipelines.scene->bind(commandBuffer);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, descriptorSets.size(),
+                                descriptorSets.data(), 0, nullptr);
+
         vkCmdDrawIndexed(commandBuffer, submesh.indexCount, 1, submesh.indexOffset, 0, 0);
     }
 }
@@ -674,26 +688,9 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    m_pipelines.skybox->bind(commandBuffer);
-
-    const auto skyTex = m_textureManager->get(m_skybox->getTextureHandle());
-    const std::array descriptorSets{
-        m_camera->getDescriptorSet(),
-        skyTex->getDescriptorSet()
-    };
-
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, descriptorSets.size(),
-                            descriptorSets.data(), 0, nullptr);
-    m_renderModel(commandBuffer, *m_skybox);
-
-    m_pipelines.scene->bind(commandBuffer);
+    // m_renderModel(commandBuffer, *m_skybox);
 
     for (const auto& model : m_models) {
-        const auto texture = m_textureManager->get(model.getTextureHandle());
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 1, 1,
-                                &texture->getDescriptorSet(), 0, nullptr);
-
         m_renderModel(commandBuffer, model);
     }
 
@@ -734,28 +731,53 @@ void VK::m_initVulkan() {
     // m_models.emplace_back(GLTFLoader("./assets/models/triangles/SimpleMeshes.gltf"));
     // m_models[0].rotate(3.14116, { 0, 1, 0 });
 
-    m_textureManager = std::make_unique<TextureManager>(m_descriptorPool);
-    auto skyboxTextureHandle = m_textureManager->loadCubeMap({
-        "./assets/skybox/hl1/right.bmp",
-        "./assets/skybox/hl1/left.bmp",
-        "./assets/skybox/hl1/top.bmp",
-        "./assets/skybox/hl1/bottom.bmp",
-        "./assets/skybox/hl1/back.bmp",
-        "./assets/skybox/hl1/front.bmp",
-    });
-
-    auto textureHandle = m_textureManager->loadTexture("./assets/crate.png");
-
-    m_skybox = std::make_unique<Cube>(skyboxTextureHandle);
-    m_models.emplace_back(Cube(textureHandle));
-    // m_models[0].rotate(M_PI_2, {1, 0, 0});
-
     // m_createDescriptorSets();
     m_createGraphicsPipeline();
     m_createFramebuffers();
 
     m_createCommandBuffers();
     m_createSyncObjects();
+
+    m_textureManager = std::make_unique<TextureManager>();
+    m_materialManager = std::make_unique<MaterialManager>(*m_textureManager, 100);
+
+    auto crateExplosivesMaterial = m_materialManager->load({
+        .name = "crate-explosives",
+        .baseColorTexture = "./assets/crate-explosives.png"
+    });
+
+    auto crateEmptyMaterial = m_materialManager->load({
+        .name = "crate-empty",
+        .baseColorTexture = "./assets/crate-empty.png"
+    });
+
+    auto crateLogoMaterial = m_materialManager->load({
+        .name = "crate-logo",
+        .baseColorTexture = "./assets/crate-logo.png"
+    });
+
+    // auto skyboxTextureHandle = m_textureManager->loadCubeMap(
+    //     {
+    //         "./assets/skybox/hl1/right.bmp",
+    //         "./assets/skybox/hl1/left.bmp",
+    //         "./assets/skybox/hl1/top.bmp",
+    //         "./assets/skybox/hl1/bottom.bmp",
+    //         "./assets/skybox/hl1/back.bmp",
+    //         "./assets/skybox/hl1/front.bmp",
+    //     },
+    //     TODO, TODO);
+
+    // auto skyboxMaterial = m_materialManager->load("skybox", m_pipelines.skybox.get(), skyboxTextureHandle);
+
+    // m_skybox = std::make_unique<Cube>(std::vector{ skyboxMaterial });
+    m_models.emplace_back(Cube({
+        .left = crateExplosivesMaterial,
+        .right = crateExplosivesMaterial,
+        .bottom = crateEmptyMaterial,
+        .top = crateEmptyMaterial,
+        .back = crateLogoMaterial,
+        .front = crateLogoMaterial
+    }));
 
     const float aspectRatio =
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
@@ -780,7 +802,7 @@ void VK::m_destroyVulkan() const {
     //     texture.destroy();
     // }
 
-    m_skybox->destroy();
+    // m_skybox->destroy();
     for (const auto& model : m_models) {
         model.destroy();
     }

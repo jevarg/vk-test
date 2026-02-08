@@ -23,11 +23,15 @@ class Pipeline {
     [[nodiscard]]
     const VkPipeline& getUnderlying() const;
 
+    [[nodiscard]]
+    Type getType() const;
+
     void bind(const VkCommandBuffer& commandBuffer) const;
 
     void destroy() const;
 
    private:
+    Type m_type;
     VkPipeline m_underlying = VK_NULL_HANDLE;
 
     Shader m_vertexShader;

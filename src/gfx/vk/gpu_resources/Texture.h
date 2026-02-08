@@ -10,8 +10,6 @@
 
 class Texture {
 public:
-    typedef size_t ID;
-
     explicit Texture(const std::string& filename, const VkDescriptorPool& descriptorPool,
                      const VkDescriptorSetLayout& descriptorSetLayout);
     explicit Texture(std::span<const std::string> filenames, const VkDescriptorPool& descriptorPool,
@@ -22,26 +20,13 @@ public:
 
     void destroy() const;
 
-    // void bind(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
-
     [[nodiscard]]
     const Image& getImage() const;
-
-    [[nodiscard]]
-    ID getID() const;
 
     [[nodiscard]]
     const VkDescriptorSet& getDescriptorSet() const;
 
 private:
-    inline static ID lastID = 0;
-
-    static ID nextID() {
-        return lastID++;
-    }
-
-    const ID m_id = nextID();
-
     void m_createDescriptorSet(const VkDescriptorPool& descriptorPool,
                                const VkDescriptorSetLayout& descriptorSetLayout);
     void m_createSampler();

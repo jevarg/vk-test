@@ -13,10 +13,13 @@
 #include "pipeline/Pipeline.h"
 
 class TextureManager;
+class MaterialManager;
 
 class VK {
    public:
     explicit VK(SDL_Window* window);
+    virtual ~VK();
+
     void run();
 
    private:
@@ -49,6 +52,8 @@ class VK {
     std::unique_ptr<DepthImage> m_depthImage;
 
     std::unique_ptr<TextureManager> m_textureManager;
+    std::unique_ptr<MaterialManager> m_materialManager;
+
     std::vector<Model> m_models;
     std::unique_ptr<Cube> m_skybox;
 
@@ -95,8 +100,8 @@ class VK {
 
     // Future Renderer
     void m_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
-    void m_drawModels(VkCommandBuffer commandBuffer) const;
-    void m_drawMesh(VkCommandBuffer commandBuffer, const Mesh* mesh);
+    // void m_drawModels(VkCommandBuffer commandBuffer) const;
+    // void m_drawMesh(VkCommandBuffer commandBuffer, const Mesh* mesh);
 
     void m_renderNode(VkCommandBuffer commandBuffer, const Node* node) const;
     void m_renderModel(VkCommandBuffer commandBuffer, const Model& model) const;

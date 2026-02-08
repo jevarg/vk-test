@@ -5,12 +5,12 @@
 
 class Model {
 public:
-    Model(std::unique_ptr<Node> rootNode, TextureHandle textureHandle);
+    explicit Model(std::unique_ptr<Node> rootNode);
 
     void destroy() const;
 
-    [[nodiscard]]
-    const TextureHandle& getTextureHandle() const;
+    // [[nodiscard]]
+    // const Handle<Texture>& getTextureHandle() const;
 
     [[nodiscard]]
     Node* getRootNode() const;
@@ -22,5 +22,5 @@ public:
 private:
     std::unique_ptr<Node> m_rootNode;
 
-    TextureHandle m_textureHandle;
+    // Handle<Texture> m_textureHandle;
 };

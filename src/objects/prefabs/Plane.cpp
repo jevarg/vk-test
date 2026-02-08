@@ -2,7 +2,7 @@
 
 #include "objects/Mesh.h"
 
-std::unique_ptr<Mesh> Plane::_createPlaneMesh() {
+std::unique_ptr<Mesh> Plane::_createPlaneMesh(Handle<BasicMaterial> materialHandle) {
     static std::vector<Vertex> vertices = {
         {  { -0.5f, 0.0f, 0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
         {   { 0.5f, 0.0f, 0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
@@ -12,7 +12,7 @@ std::unique_ptr<Mesh> Plane::_createPlaneMesh() {
 
     static std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
 
-    return std::make_unique<Mesh>("Plane", vertices, indices);
+    return std::make_unique<Mesh>("Plane", vertices, indices, std::vector{ materialHandle });
 }
 
-Plane::Plane(const TextureHandle textureHandle) : Model(std::make_unique<Node>(_createPlaneMesh()), textureHandle) {}
+Plane::Plane(Handle<BasicMaterial> materialHandle) : Model(std::make_unique<Node>(_createPlaneMesh(materialHandle))) {}

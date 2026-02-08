@@ -1,7 +1,7 @@
 #include "Cube.h"
 #include "objects/Mesh.h"
 
-std::unique_ptr<Mesh> Cube::_createCubeMesh() {
+std::unique_ptr<Mesh> Cube::_createCubeMesh(const Materials& materials) {
     static const std::vector<Vertex> vertices = {
         // -x face (left)
         { { -1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
@@ -55,14 +55,24 @@ std::unique_ptr<Mesh> Cube::_createCubeMesh() {
         20, 21, 22, 22, 23, 20,
     };
 
-    return std::make_unique<Mesh>("Cube", vertices, indices, std::vector<Submesh>({
-        {0, 6},
-        {6, 6},
-        {12, 6},
-        {18, 6},
-        {24, 6},
-        {30, 6},
-    }));
+    std::vector<Submesh> submeshes({
+        {0, 6, 0},
+        {6, 6, 1},
+        {12, 6, 2},
+        {18, 6, 3},
+        {24, 6, 4},
+        {30, 6, 5},
+    });
+
+    return std::make_unique<Mesh>("Cube", vertices, indices, std::vector{
+        materials.left,
+        materials.right,
+        materials.bottom,
+        materials.top,
+        materials.back,
+        materials.front,
+    }, submeshes);
 }
 
-Cube::Cube(const TextureHandle textureHandle) : Model(std::make_unique<Node>(_createCubeMesh()), textureHandle) {}
+Cube::Cube(const Materials& materials)
+    : Model(std::make_unique<Node>(_createCubeMesh(materials))) {}

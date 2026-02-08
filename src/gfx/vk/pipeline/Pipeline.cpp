@@ -14,7 +14,7 @@ Pipeline::Pipeline(const Type type, const char* vertexShaderPath, const char* fr
                    const VkPipelineColorBlendStateCreateInfo& colorBlendState,
                    const VkPipelineDepthStencilStateCreateInfo& depthStencilState, const VkPipelineLayout& layout,
                    const VkRenderPass& renderPass)
-    : m_vertexShader(vertexShaderPath, Shader::Type::Vertex),
+    : m_type(type), m_vertexShader(vertexShaderPath, Shader::Type::Vertex),
       m_fragmentShader(fragmentShaderPath, Shader::Type::Fragment) {
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -59,6 +59,10 @@ Pipeline::Pipeline(const Type type, const char* vertexShaderPath, const char* fr
 
 const VkPipeline& Pipeline::getUnderlying() const {
     return m_underlying;
+}
+
+Pipeline::Type Pipeline::getType() const {
+    return m_type;
 }
 
 void Pipeline::bind(const VkCommandBuffer& commandBuffer) const {
