@@ -8,8 +8,7 @@
 #include "vk/vkutil.h"
 #include "vk/types/VulkanContext.h"
 
-Camera::Camera(const float aspectRatio, const VkDescriptorPool& descriptorPool,
-               const VkDescriptorSetLayout& descriptorSetLayout) {
+Camera::Camera(const float aspectRatio) {
     m_projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.01f, 1000.0f);
 
     // TODO: change that
@@ -19,7 +18,7 @@ Camera::Camera(const float aspectRatio, const VkDescriptorPool& descriptorPool,
         std::make_unique<Buffer>(sizeof(UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    m_createDescriptorSet(descriptorPool, descriptorSetLayout);
+    m_createDescriptorSet();
     update(0);
 }
 
@@ -41,7 +40,11 @@ const Buffer& Camera::getUniform() const {
     return *m_uniformBuffer;
 }
 
-const VkDescriptorSet& Camera::getDescriptorSet() const {
+VkDescriptorSetLayout Camera::getDescriptorSetLayout() const {
+    return m_descriptorSetLayout;
+}
+
+VkDescriptorSet Camera::getDescriptorSet() const {
     return m_descriptorSet;
 }
 
@@ -97,14 +100,42 @@ void Camera::update(const float delta) {
     m_uniformBuffer->setMemory(&ubo);
 }
 
-void Camera::m_createDescriptorSet(const VkDescriptorPool& descriptorPool,
-                                   const VkDescriptorSetLayout& descriptorSetLayout) {
+void Camera::m_createDescriptorSet() {
+    constexpr VkDescriptorPoolSize poolSize{
+        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = 1,
+    };
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = 1; // m_swapChainImages.size(); // TODO: Do that
+
+    VK_CHECK("failed to create camera descriptor pool",
+             vkCreateDescriptorPool(VulkanContext::get().getDevice(), &poolInfo, nullptr, &m_descriptorPool));
+
+    VkDescriptorSetLayoutBinding sceneLayoutBinding{};
+    sceneLayoutBinding.binding = 0;
+    sceneLayoutBinding.descriptorCount = 1;
+    sceneLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    sceneLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &sceneLayoutBinding;
+
+    VK_CHECK("failed to create camera descriptor set layout",
+             vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr,
+                 &m_descriptorSetLayout));
+
     const VulkanContext& vkContext = VulkanContext::get();
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorPool = m_descriptorPool;
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &descriptorSetLayout;
+    allocInfo.pSetLayouts = &m_descriptorSetLayout;
 
     VK_CHECK("failed to allocate descriptor sets",
              vkAllocateDescriptorSets(vkContext.getDevice(), &allocInfo, &m_descriptorSet));

@@ -7,6 +7,7 @@
 #include "Handle.h"
 #include "vk/pipeline/Pipeline.h"
 
+class PipelineManager;
 class TextureManager;
 class Pipeline;
 class BasicMaterial;
@@ -19,15 +20,19 @@ struct MaterialData{
 
 class MaterialManager {
 public:
-    explicit MaterialManager(TextureManager& textureManager, uint32_t maxSize);
+    explicit MaterialManager(TextureManager& textureManager, PipelineManager& pipelineManager, uint32_t maxSize);
 
     Handle<BasicMaterial> load(const MaterialData& data);
 
     [[nodiscard]]
     std::shared_ptr<BasicMaterial> get(const Handle<BasicMaterial>& handle);
 
+    [[nodiscard]]
+    VkDescriptorSetLayout getDescriptorSetLayout() const;
+
 private:
     TextureManager& m_textureManager;
+    PipelineManager& m_pipelineManager;
 
     VkDescriptorPool m_descriptorPool = nullptr;
     VkDescriptorSetLayout m_descriptorSetLayout = nullptr;

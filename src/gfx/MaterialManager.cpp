@@ -7,11 +7,12 @@
 #include "objects/BasicMaterial.h"
 #include "vk/vkutil.h"
 
-MaterialManager::MaterialManager(TextureManager& textureManager, const uint32_t maxSize)
-    : m_textureManager(textureManager) {
-    constexpr VkDescriptorPoolSize poolSize{
+MaterialManager::MaterialManager(TextureManager& textureManager, PipelineManager& pipelineManager,
+                                 const uint32_t maxSize)
+    : m_textureManager(textureManager), m_pipelineManager(pipelineManager) {
+    const VkDescriptorPoolSize poolSize{
         .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount = 1
+        .descriptorCount = maxSize
     };
 
     VkDescriptorPoolCreateInfo poolInfo{};
@@ -62,4 +63,8 @@ std::shared_ptr<BasicMaterial> MaterialManager::get(const Handle<BasicMaterial>&
     }
 
     return m_materials.at(m_defaultMaterial);
+}
+
+VkDescriptorSetLayout MaterialManager::getDescriptorSetLayout() const {
+    return m_descriptorSetLayout;
 }

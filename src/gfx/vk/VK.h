@@ -12,6 +12,7 @@
 #include "objects/prefabs/Cube.h"
 #include "pipeline/Pipeline.h"
 
+class PipelineManager;
 class TextureManager;
 class MaterialManager;
 
@@ -28,13 +29,13 @@ class VK {
     VkInstance m_instance = VK_NULL_HANDLE;
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
-    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+    // VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
 
-    struct Pipelines {
-        std::unique_ptr<Pipeline> scene;
-        std::unique_ptr<Pipeline> skybox;
-    } m_pipelines;
+    // struct Pipelines {
+    //     std::unique_ptr<Pipeline> scene;
+    //     std::unique_ptr<Pipeline> skybox;
+    // } m_pipelines;
 
     VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
     std::vector<VkImage> m_swapChainImages;
@@ -51,6 +52,7 @@ class VK {
 
     std::unique_ptr<DepthImage> m_depthImage;
 
+    std::unique_ptr<PipelineManager> m_pipelineManager;
     std::unique_ptr<TextureManager> m_textureManager;
     std::unique_ptr<MaterialManager> m_materialManager;
 
@@ -58,10 +60,7 @@ class VK {
     std::unique_ptr<Cube> m_skybox;
 
     std::unique_ptr<Camera> m_camera;
-
-    VkDescriptorSetLayout m_sceneDescriptorSetLayout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout m_textureDescriptorSetLayout = VK_NULL_HANDLE;
-    VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
+    // VkDescriptorSetLayout m_textureDescriptorSetLayout = VK_NULL_HANDLE;
 
     void m_mainLoop();
     void m_drawFrame();

@@ -2,8 +2,9 @@
 
 #include <fmt/format.h>
 #include <fstream>
+#include <utility>
 
-Shader::Shader(const char *path, const Type shaderType) : m_filePath(path), m_type(shaderType) {
+Shader::Shader(const Type shaderType, std::string path) : m_filePath(std::move(path)), m_type(shaderType) {
     std::ifstream file(m_filePath, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
         throw std::runtime_error(fmt::format("Unable to open {}", m_filePath));
@@ -36,7 +37,7 @@ const char* Shader::getEntryPoint() const {
 void Shader::m_compile(const std::string &glslString) {
     const shaderc::Compiler compiler;
     const shaderc::SpvCompilationResult res =
-            compiler.CompileGlslToSpv(glslString, static_cast<shaderc_shader_kind>(m_type), m_filePath);
+            compiler.CompileGlslToSpv(glslString, static_cast<shaderc_shader_kind>(m_type), m_filePath.c_str());
 
     if (res.GetCompilationStatus() != shaderc_compilation_status_success) {
         throw std::runtime_error(fmt::format("Could not compile {}: {}", m_filePath, res.GetErrorMessage()));

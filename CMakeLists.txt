@@ -34,6 +34,11 @@ add_executable(VKTest
 
         src/gfx/Camera.cpp
         src/gfx/Camera.h
+        src/gfx/Handle.h
+        src/gfx/MaterialManager.cpp
+        src/gfx/MaterialManager.h
+        src/gfx/PipelineManager.cpp
+        src/gfx/PipelineManager.h
         src/gfx/TextureManager.cpp
         src/gfx/TextureManager.h
         src/gfx/vk/OneTimeCommand.cpp
@@ -53,8 +58,12 @@ add_executable(VKTest
         src/gfx/vk/gpu_resources/Shader.h
         src/gfx/vk/gpu_resources/Texture.cpp
         src/gfx/vk/gpu_resources/Texture.h
+
         src/gfx/vk/pipeline/Pipeline.cpp
         src/gfx/vk/pipeline/Pipeline.h
+        src/gfx/vk/pipeline/SimplePipeline.cpp
+        src/gfx/vk/pipeline/SimplePipeline.h
+
         src/gfx/vk/types/UniformBufferObject.h
         src/gfx/vk/types/Vertex.h
         src/gfx/vk/types/VulkanContext.h
@@ -68,8 +77,8 @@ add_executable(VKTest
         src/objects/prefabs/Plane.h
         src/objects/Mesh.cpp
         src/objects/Mesh.h
-        src/objects/Material.cpp
-        src/objects/Material.h
+        src/objects/BasicMaterial.cpp
+        src/objects/BasicMaterial.h
         src/objects/Node.cpp
         src/objects/Node.h
 #        src/objects/gltf/Primitive.cpp

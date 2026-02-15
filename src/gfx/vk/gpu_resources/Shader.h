@@ -11,7 +11,7 @@ class Shader {
    public:
     enum Type { Vertex = shaderc_vertex_shader, Fragment = shaderc_fragment_shader };
 
-    explicit Shader(const char *path, Type shaderType);
+    explicit Shader(Type shaderType, std::string  path);
 
     void destroy() const;
 
@@ -22,7 +22,7 @@ class Shader {
     const char* getEntryPoint() const;
 
    private:
-    const char *m_filePath;
+    std::string m_filePath;
     const Type m_type;
 
     std::vector<uint32_t> m_bytecode;

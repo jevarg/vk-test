@@ -9,8 +9,7 @@
 
 class Camera {
 public:
-    explicit Camera(float aspectRatio, const VkDescriptorPool& descriptorPool,
-                    const VkDescriptorSetLayout& descriptorSetLayout);
+    explicit Camera(float aspectRatio);
 
     void destroy() const;
     void update(float delta);
@@ -25,15 +24,20 @@ public:
     const Buffer& getUniform() const;
 
     [[nodiscard]]
-    const VkDescriptorSet& getDescriptorSet() const;
+    VkDescriptorSetLayout getDescriptorSetLayout() const;
+
+    [[nodiscard]]
+    VkDescriptorSet getDescriptorSet() const;
 
     void setPosition(const glm::vec3& v);
 
 private:
-    void m_createDescriptorSet(const VkDescriptorPool& descriptorPool,
-                               const VkDescriptorSetLayout& descriptorSetLayout);
+    void m_createDescriptorSet();
 
+    VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorSet m_descriptorSet = VK_NULL_HANDLE;
+
     std::unique_ptr<Buffer> m_uniformBuffer;
     Node m_node;
     glm::mat4 m_projection{};

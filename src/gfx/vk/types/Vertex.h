@@ -14,37 +14,26 @@ struct Vertex {
     glm::vec2 texCoord;
     glm::vec3 normal;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription desc{};
-        desc.binding = 0;
-        desc.stride = sizeof(Vertex);
-        desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    [[nodiscard]]
+    static const VkVertexInputBindingDescription* getBindingDescription() {
+        static constexpr VkVertexInputBindingDescription desc{
+            .binding = 0,
+            .stride = sizeof(Vertex),
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+        };
 
-        return desc;
+        return &desc;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 4> attrDescriptions{};
-        attrDescriptions[0].binding = 0;
-        attrDescriptions[0].location = 0;
-        attrDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attrDescriptions[0].offset = offsetof(Vertex, pos);
+    [[nodiscard]]
+    static const std::array<VkVertexInputAttributeDescription, 4>* getAttributeDescriptions() {
+        static constexpr std::array<VkVertexInputAttributeDescription, 4> attrDescriptions{{
+            { .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, pos) },
+            { .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, color) },
+            { .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT,    .offset = offsetof(Vertex, texCoord) },
+            { .location = 3, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal) },
+        }};
 
-        attrDescriptions[1].binding = 0;
-        attrDescriptions[1].location = 1;
-        attrDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attrDescriptions[1].offset = offsetof(Vertex, color);
-
-        attrDescriptions[2].binding = 0;
-        attrDescriptions[2].location = 2;
-        attrDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attrDescriptions[2].offset = offsetof(Vertex, texCoord);
-
-        attrDescriptions[3].binding = 0;
-        attrDescriptions[3].location = 3;
-        attrDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attrDescriptions[3].offset = offsetof(Vertex, normal);
-
-        return attrDescriptions;
+        return &attrDescriptions;
     }
 };

@@ -21,6 +21,7 @@ public:
    private:
     std::string m_name;
 
+    [[deprecated]]
     Pipeline::Type m_pipelineType;
     Handle<Texture> m_texture;
 };
