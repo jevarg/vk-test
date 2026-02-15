@@ -49,8 +49,16 @@ void Node::translate(const glm::vec3& v) {
     m_transform.translate(v);
 }
 
+void Node::translateLocal(const glm::vec3& v) {
+    m_transform.translateLocal(v);
+}
+
 void Node::rotate(const float angle, const glm::vec3& axis) {
     m_transform.rotate(angle, axis);
+}
+
+void Node::rotateLocal(const float angle, const glm::vec3& axis) {
+    m_transform.rotateLocal(angle, axis);
 }
 
 void Node::scale(const glm::vec3& v) {

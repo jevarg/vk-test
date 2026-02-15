@@ -58,10 +58,10 @@ Handle<BasicMaterial> MaterialManager::load(const MaterialData& data) {
 std::shared_ptr<BasicMaterial> MaterialManager::get(const Handle<BasicMaterial>& handle) {
     const auto it = m_materials.find(handle);
     if (it != m_materials.end()) {
-        fmt::println("MaterialManager::get({}): {}", handle.id, fmt::ptr(it->second.get()));
         return it->second;
     }
 
+    fmt::println("MaterialManager::get({}): Material not found!", handle.id, fmt::ptr(it->second.get()));
     return m_materials.at(m_defaultMaterial);
 }
 

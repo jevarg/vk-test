@@ -18,8 +18,18 @@ void Transform::translate(const glm::vec3& v) {
     m_position += v;
 }
 
+void Transform::translateLocal(const glm::vec3& v) {
+    m_position += m_rotation * v;
+}
+
 void Transform::rotate(const float angle, const glm::vec3& axis) {
-    m_rotation = glm::rotate(m_rotation, angle, axis);
+    const glm::quat rotation = glm::angleAxis(angle, glm::normalize(axis));
+    m_rotation = rotation * m_rotation;  // Apply rotation BEFORE current rotation
+}
+
+void Transform::rotateLocal(const float angle, const glm::vec3& axis) {
+    const glm::quat rotation = glm::angleAxis(angle, glm::normalize(axis));
+    m_rotation = m_rotation * rotation;  // Apply rotation AFTER current rotation
 }
 
 void Transform::scale(const glm::vec3& v) {

@@ -59,19 +59,19 @@ void Camera::update(const float delta) {
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_W)) {
-        m_node.translate({ 0.0f, 0.0f, -speed });
+        m_node.translateLocal({ 0.0f, 0.0f, -speed });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_S)) {
-        m_node.translate({ 0.0f, 0.0f, speed });
+        m_node.translateLocal({ 0.0f, 0.0f, speed });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_A)) {
-        m_node.translate({ -speed, 0.0f, 0.0f });
+        m_node.translateLocal({ -speed, 0.0f, 0.0f });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_D)) {
-        m_node.translate({ speed, 0.0f, 0.0f });
+        m_node.translateLocal({ speed, 0.0f, 0.0f });
     }
 
     if (Keyboard::isKeyPressed(SDL_SCANCODE_SPACE)) {
@@ -88,7 +88,7 @@ void Camera::update(const float delta) {
     }
 
     if (mouseDelta.y != 0) {
-        m_node.rotate(-m_sensitivity * mouseDelta.y, { 1.0f, 0.0f, 0.0f });
+        m_node.rotateLocal(-m_sensitivity * mouseDelta.y, { 1.0f, 0.0f, 0.0f });
     }
 
     const UniformBufferObject ubo{

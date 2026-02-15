@@ -712,28 +712,6 @@ void VK::m_initVulkan() {
     m_createImageViews();
     m_createRenderPass();
     m_createDepthResources();
-    // m_createDescriptorSetLayout();
-    // m_createDescriptorPool();
-
-    // m_textures.emplace_back(std::vector{ "./assets/models/avocado/avocado_baseColor.png" }, m_descriptorPool,
-    //                         m_textureDescriptorSetLayout);
-    // m_textures.emplace_back(std::vector{"./assets/viking_room.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
-    // m_textures.emplace_back({
-    //     "./assets/skybox/hl1/right.bmp",
-    //     "./assets/skybox/hl1/left.bmp",
-    //     "./assets/skybox/hl1/top.bmp",
-    //     "./assets/skybox/hl1/bottom.bmp",
-    //     "./assets/skybox/hl1/back.bmp",
-    //     "./assets/skybox/hl1/front.bmp",
-    // }, m_descriptorPool, m_textureDescriptorSetLayout);
-    // m_textures.emplace_back(std::vector{"./assets/souley.png"}, m_descriptorPool, m_textureDescriptorSetLayout);
-
-    // m_models.emplace_back(GLTFLoader("./assets/models/avocado/Avocado.gltf"));
-    // m_models.emplace_back(GLTFLoader("./assets/models/triangles/SimpleMeshes.gltf"));
-    // m_models[0].rotate(3.14116, { 0, 1, 0 });
-
-    // m_createDescriptorSets();
-    // m_createGraphicsPipeline();
     m_createFramebuffers();
 
     m_createCommandBuffers();
@@ -741,7 +719,7 @@ void VK::m_initVulkan() {
 
     m_pipelineManager = std::make_unique<PipelineManager>();
     m_textureManager = std::make_unique<TextureManager>();
-    m_materialManager = std::make_unique<MaterialManager>(*m_textureManager, *m_pipelineManager, 10);
+    m_materialManager = std::make_unique<MaterialManager>(*m_textureManager, *m_pipelineManager, 100);
 
     const float aspectRatio =
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);

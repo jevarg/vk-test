@@ -32,7 +32,11 @@ public:
     void setPosition(const glm::vec3& v);
 
     void translate(const glm::vec3& v);
+    void translateLocal(const glm::vec3& v);
+
     void rotate(float angle, const glm::vec3& axis);
+    void rotateLocal(float angle, const glm::vec3& axis);
+
     void scale(const glm::vec3& v);
 
 private:
