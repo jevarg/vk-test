@@ -17,5 +17,5 @@ PROJECT_DIR=$(dirname "$(readlink -f "$0")")
 export CONAN_HOME="$PROJECT_DIR/.conan"
 
 conan profile detect --exist-ok
-conan install --build=missing --profile "$PROFILE" --profile debug conanfile.txt
-conan install --build=missing --profile "$PROFILE" --profile release conanfile.txt
+conan install --build=missing --profile "$PROFILE" --profile debug conanfile.py
+conan install --build=missing --profile "$PROFILE" --profile release conanfile.py

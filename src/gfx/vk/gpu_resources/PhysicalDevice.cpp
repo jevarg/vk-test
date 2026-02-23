@@ -135,18 +135,18 @@ uint32_t PhysicalDevice::findMemoryType(const uint32_t type, const VkMemoryPrope
     throw std::runtime_error("unable to find memory type!");
 }
 
-const VkPhysicalDevice &PhysicalDevice::getUnderlying() const {
+VkPhysicalDevice PhysicalDevice::getUnderlying() const {
     return m_underlying;
 }
 
-const VkPhysicalDeviceProperties &PhysicalDevice::getProperties() const {
+VkPhysicalDeviceProperties PhysicalDevice::getProperties() const {
     return m_properties;
 }
 
-const QueueFamilyIndices &PhysicalDevice::getQueueFamilyIndices() const {
+QueueFamilyIndices PhysicalDevice::getQueueFamilyIndices() const {
     return m_queueFamilies;
 }
 
-const SwapChainSupportDetails &PhysicalDevice::getSwapChainSupportDetails() const {
+SwapChainSupportDetails PhysicalDevice::getSwapChainSupportDetails() const {
     return m_swapChainSupport;
 }

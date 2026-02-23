@@ -30,14 +30,26 @@ class PhysicalDevice {
 public:
     explicit PhysicalDevice(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface);
 
+    [[nodiscard]]
     bool isSuitable() const;
+
+    [[nodiscard]]
     bool supportsExtensions(const std::vector<const char*>& requiredVKExtensions) const;
+
+    [[nodiscard]]
     uint32_t findMemoryType(uint32_t type, VkMemoryPropertyFlags properties) const;
 
-    const VkPhysicalDevice& getUnderlying() const;
-    const VkPhysicalDeviceProperties& getProperties() const;
-    const QueueFamilyIndices& getQueueFamilyIndices() const;
-    const SwapChainSupportDetails& getSwapChainSupportDetails() const;
+    [[nodiscard]]
+    VkPhysicalDevice getUnderlying() const;
+
+    [[nodiscard]]
+    VkPhysicalDeviceProperties getProperties() const;
+
+    [[nodiscard]]
+    QueueFamilyIndices getQueueFamilyIndices() const;
+
+    [[nodiscard]]
+    SwapChainSupportDetails getSwapChainSupportDetails() const;
 
 private:
     void m_findQueueFamilies(const VkSurfaceKHR& surface);

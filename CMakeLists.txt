@@ -8,6 +8,7 @@ find_package(fmt REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(imgui REQUIRED)
 
 set(SHADERC_COMBINED_LIB_NAME "shaderc_combined")
 set(SHADERC_UTIL_LIB_NAME "shaderc_util")
@@ -30,6 +31,11 @@ find_library(SHADERC_UTIL_LIB
 )
 
 add_executable(VKTest
+        bindings/imgui_impl_sdl2.cpp
+        bindings/imgui_impl_sdl2.h
+        bindings/imgui_impl_vulkan.cpp
+        bindings/imgui_impl_vulkan.h
+
         src/main.cpp
 
         src/gfx/Camera.cpp
@@ -41,6 +47,10 @@ add_executable(VKTest
         src/gfx/PipelineManager.h
         src/gfx/TextureManager.cpp
         src/gfx/TextureManager.h
+
+        src/gfx/debug/DebugView.cpp
+        src/gfx/debug/DebugView.h
+
         src/gfx/vk/OneTimeCommand.cpp
         src/gfx/vk/OneTimeCommand.h
         src/gfx/vk/VK.cpp
@@ -109,6 +119,7 @@ add_executable(VKTest
 
 target_include_directories(VKTest PRIVATE
         src
+        bindings
         external/include
 )
 target_link_libraries(VKTest PRIVATE
@@ -117,6 +128,7 @@ target_link_libraries(VKTest PRIVATE
         SDL2::SDL2main
         glm::glm
         Vulkan::Vulkan
+        imgui::imgui
         ${SHADERC_COMBINED_LIB}
         ${SHADERC_UTIL_LIB}
 )

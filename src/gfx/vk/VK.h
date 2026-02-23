@@ -30,14 +30,7 @@ class VK {
     VkInstance m_instance = VK_NULL_HANDLE;
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
-    // VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
-
-    // struct Pipelines {
-    //     std::unique_ptr<Pipeline> scene;
-    //     std::unique_ptr<Pipeline> skybox;
-    // } m_pipelines;
-
     VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
     std::vector<VkImage> m_swapChainImages;
     std::vector<VkImageView> m_swapChainImageViews;
@@ -106,6 +99,7 @@ class VK {
     void m_renderNode(VkCommandBuffer commandBuffer, const Node* node) const;
     void m_renderModel(VkCommandBuffer commandBuffer, const Model& model) const;
 
+    void m_initDebug();
     void m_initVulkan();
     void m_destroyVulkan() const;
 };

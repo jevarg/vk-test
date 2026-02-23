@@ -37,23 +37,23 @@ bool VulkanContext::isInitialized() const {
     return m_initialized;
 }
 
-const PhysicalDevice& VulkanContext::getPhysicalDevice() const {
+PhysicalDevice VulkanContext::getPhysicalDevice() const {
     return *m_physicalDevice;
 }
 
-const VkDevice& VulkanContext::getDevice() const {
+VkDevice VulkanContext::getDevice() const {
     return m_device;
 }
 
-const VkCommandPool& VulkanContext::getCommandPool() const {
+VkCommandPool VulkanContext::getCommandPool() const {
     return m_commandPool;
 }
 
-const VkQueue& VulkanContext::getGraphicsQueue() const {
+VkQueue VulkanContext::getGraphicsQueue() const {
     return m_graphicsQueue;
 }
 
-const VkQueue& VulkanContext::getPresentQueue() const {
+VkQueue VulkanContext::getPresentQueue() const {
     return m_presentQueue;
 }
 

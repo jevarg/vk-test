@@ -15,6 +15,7 @@
 #include "gfx/MaterialManager.h"
 #include "gfx/PipelineManager.h"
 #include "gfx/TextureManager.h"
+#include "gfx/debug/DebugView.h"
 #include "gpu_resources/Texture.h"
 #include "input/Keyboard.h"
 #include "input/Mouse.h"
@@ -27,7 +28,7 @@
 #include "types/Vertex.h"
 #include "vkutil.h"
 
-constexpr uint32_t maxInflightFrames = 1;
+constexpr uint32_t maxInflightFrames = 2;
 
 const std::vector requiredVKExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -49,16 +50,32 @@ void VK::run() {
 void VK::m_mainLoop() {
     bool shouldClose = true;
     while (shouldClose) {
+        const int centerX = static_cast<int>(m_swapChainExtent.width) / 2;
+        const int centerY = static_cast<int>(m_swapChainExtent.height) / 2;
+
         SDL_Event evt;
         while (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_QUIT || (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_ESCAPE)) {
                 shouldClose = false;
                 break;
             }
+
+            if (evt.type == SDL_KEYUP && evt.key.keysym.scancode == SDL_SCANCODE_GRAVE) {
+                SDL_SetRelativeMouseMode(static_cast<SDL_bool>(!Debug::View::toggle()));
+            }
+
+            Debug::View::update(&evt);
         }
 
-        Keyboard::update();
-        Mouse::update();
+
+        if (!Debug::View::isVisible()) {
+            Mouse::update();
+            SDL_WarpMouseInWindow(m_window, centerX, centerY);
+        }
+
+        if (!Debug::View::wantsKeyboard()) {
+            Keyboard::update();
+        }
 
         m_camera->update(0);
         m_models[0].rotate(0.02, { 0, 1, 0 });
@@ -71,6 +88,12 @@ void VK::m_mainLoop() {
 }
 
 void VK::m_drawFrame() {
+    // ImGui_ImplVulkan_NewFrame();
+    // ImGui_ImplSDL2_NewFrame();
+    // ImGui::NewFrame();
+    // ImGui::ShowDemoWindow();
+    Debug::View::beginFrame();
+
     const VulkanContext& vkContext = VulkanContext::get();
     vkWaitForFences(vkContext.getDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -669,6 +692,10 @@ void VK::m_renderModel(VkCommandBuffer commandBuffer, const Model& model) const 
     m_renderNode(commandBuffer, model.getRootNode());
 }
 
+void VK::m_initDebug() {
+    Debug::View::init(m_window, m_instance, m_renderPass, maxInflightFrames);
+}
+
 void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t imageIndex) const {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -697,6 +724,7 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
         m_renderModel(commandBuffer, model);
     }
 
+    Debug::View::endFrame(commandBuffer);
     vkCmdEndRenderPass(commandBuffer);
 
     VK_CHECK("failed to record command buffer!", vkEndCommandBuffer(commandBuffer));
@@ -718,6 +746,8 @@ void VK::m_initVulkan() {
 
     m_createCommandBuffers();
     m_createSyncObjects();
+
+    m_initDebug();
 
     m_pipelineManager = std::make_unique<PipelineManager>();
     m_textureManager = std::make_unique<TextureManager>();
@@ -779,6 +809,7 @@ void VK::m_initVulkan() {
 }
 
 void VK::m_destroyVulkan() const {
+    Debug::View::destroy();
     m_destroySwapChain();
 
     VulkanContext& vkContext = VulkanContext::get();

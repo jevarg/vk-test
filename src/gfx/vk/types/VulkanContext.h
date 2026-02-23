@@ -11,14 +11,23 @@ public:
     void init(const VkInstance& vkInstance, const VkSurfaceKHR& vkSurface);
     void destroy();
 
+    [[nodiscard]]
     bool isInitialized() const;
 
-    const PhysicalDevice& getPhysicalDevice() const;
-    const VkDevice& getDevice() const;
+    [[nodiscard]]
+    PhysicalDevice getPhysicalDevice() const;
 
-    const VkCommandPool& getCommandPool() const;
-    const VkQueue& getGraphicsQueue() const;
-    const VkQueue& getPresentQueue() const;
+    [[nodiscard]]
+    VkDevice getDevice() const;
+
+    [[nodiscard]]
+    VkCommandPool getCommandPool() const;
+
+    [[nodiscard]]
+    VkQueue getGraphicsQueue() const;
+
+    [[nodiscard]]
+    VkQueue getPresentQueue() const;
 
 private:
     void m_pickPhysicalDevice(const VkSurfaceKHR& vkSurface);

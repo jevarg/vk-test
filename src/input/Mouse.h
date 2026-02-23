@@ -7,6 +7,12 @@
 class Mouse {
    public:
     static void update() {
+        if (!SDL_GetRelativeMouseMode()) {
+            m_delta.x = 0;
+            m_delta.y = 0;
+            return;
+        }
+
         int rawMouseX = 0;
         int rawMouseY = 0;
 
@@ -18,6 +24,11 @@ class Mouse {
     static const glm::vec2& getDelta() {
         return m_delta;
     }
+
+    // static void reset() {
+    //     m_delta.x = 0;
+    //     m_delta.y = 0;
+    // }
 
    private:
     inline static glm::vec2 m_delta{};
