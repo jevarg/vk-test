@@ -45,12 +45,12 @@ int main(int, char**) {
         return EXIT_FAILURE;
     }
 
-    try {
+    // try {
         VK app(window);
         app.run();
-    } catch (const std::exception& e) {
-        fmt::println(stderr, "App error: {}", e.what());
-    }
+    // } catch (const std::exception& e) {
+    //     fmt::println(stderr, "App error: {}", e.what());
+    // }
 
     DestroySDL(window);
     return EXIT_SUCCESS;

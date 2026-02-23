@@ -2,7 +2,8 @@
 
 Mesh::Mesh(std::string name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
            const std::vector<Handle<BasicMaterial>>& materials)
-    : Mesh(std::move(name), vertices, indices, materials, {{}}) {}
+    : Mesh(std::move(name), vertices, indices, materials,
+           {{ 0, static_cast<uint32_t>(indices.size()), 0 }}) {}
 
 Mesh::Mesh(std::string name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
            const std::vector<Handle<BasicMaterial>>& materials, const std::vector<Submesh>& submeshes)

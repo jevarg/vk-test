@@ -1,12 +1,12 @@
-#include "SimplePipeline.h"
+#include "SkyboxPipeline.h"
 
 #include "gfx/vk/types/Vertex.h"
 #include "gfx/vk/vkutil.h"
 
-SimplePipeline::SimplePipeline(const VkExtent2D& extent, const std::span<VkDescriptorSetLayout>& setLayouts,
+SkyboxPipeline::SkyboxPipeline(const VkExtent2D& extent, const std::span<VkDescriptorSetLayout>& setLayouts,
                                VkRenderPass renderPass)
-    : Pipeline("./shaders/simple.vert", "./shaders/simple.frag") {
-    m_type = Simple;
+    : Pipeline("./shaders/skybox.vert", "./shaders/skybox.frag") {
+    m_type = Skybox;
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -33,6 +33,10 @@ SimplePipeline::SimplePipeline(const VkExtent2D& extent, const std::span<VkDescr
     auto colorBlendState = Pipeline::getColorBlending();
     auto depthStencilState = Pipeline::getDepthStencil();
 
+    depthStencilState.depthTestEnable = VK_FALSE;
+    depthStencilState.depthWriteEnable = VK_FALSE;
+    depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+
     Pipeline::createLayout(setLayouts);
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -44,7 +48,6 @@ SimplePipeline::SimplePipeline(const VkExtent2D& extent, const std::span<VkDescr
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisample;
-    pipelineInfo.pDepthStencilState = nullptr;
     pipelineInfo.pColorBlendState = &colorBlendState;
     pipelineInfo.pDepthStencilState = &depthStencilState;
     // TODO: Later maybe

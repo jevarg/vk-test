@@ -20,9 +20,6 @@ public:
     Mesh(std::string name, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
          const std::vector<Handle<BasicMaterial>>& materials, const std::vector<Submesh>& submeshes);
 
-    // void draw(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout,
-    //           const glm::mat4& worldTransform) const;
-
     [[nodiscard]]
     const Buffer& getVertexBuffer() const;
 

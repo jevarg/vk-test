@@ -3,8 +3,10 @@
 #include <fmt/base.h>
 #include <fmt/format.h>
 
+#include "PipelineManager.h"
 #include "TextureManager.h"
 #include "objects/BasicMaterial.h"
+#include "vk/pipeline/SimplePipeline.h"
 #include "vk/vkutil.h"
 
 MaterialManager::MaterialManager(TextureManager& textureManager, PipelineManager& pipelineManager,
@@ -39,14 +41,29 @@ MaterialManager::MaterialManager(TextureManager& textureManager, PipelineManager
              vkCreateDescriptorSetLayout(VulkanContext::get().getDevice(), &layoutInfo, nullptr,
                  &m_descriptorSetLayout));
 
-    m_defaultMaterial = load({ .name = "default-material", .baseColorTexture = "./assets/souley.png" });
+    m_defaultMaterial = load({
+        .name = "default-material",
+        .baseColorTexture = "./assets/souley.png",
+        .pipelineType = Pipeline::Simple,
+    });
 }
 
 Handle<BasicMaterial> MaterialManager::load(const MaterialData& data) {
     Handle<Texture> textureHandle = m_textureManager.load(data.baseColorTexture, m_descriptorPool, m_descriptorSetLayout);
 
-    auto material = std::make_shared<BasicMaterial>(data.name, Pipeline::Graphics, textureHandle);
+    auto material = std::make_shared<BasicMaterial>(data.name, data.pipelineType, textureHandle);
+    const auto [it, success] = m_materials.emplace(Handle<BasicMaterial>(), material);
+    if (!success) {
+        throw std::runtime_error(fmt::format("Unable to load material '{}'", data.name));
+    }
 
+    return it->first;
+}
+
+Handle<BasicMaterial> MaterialManager::loadCubemap(const CubemapData& data) {
+    Handle<Texture> textureHandle = m_textureManager.loadCubeMap(data.textures, m_descriptorPool, m_descriptorSetLayout);
+
+    auto material = std::make_shared<BasicMaterial>(data.name, data.pipelineType, textureHandle);
     const auto [it, success] = m_materials.emplace(Handle<BasicMaterial>(), material);
     if (!success) {
         throw std::runtime_error(fmt::format("Unable to load material '{}'", data.name));

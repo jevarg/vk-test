@@ -63,6 +63,8 @@ add_executable(VKTest
         src/gfx/vk/pipeline/Pipeline.h
         src/gfx/vk/pipeline/SimplePipeline.cpp
         src/gfx/vk/pipeline/SimplePipeline.h
+        src/gfx/vk/pipeline/SkyboxPipeline.cpp
+        src/gfx/vk/pipeline/SkyboxPipeline.h
 
         src/gfx/vk/types/UniformBufferObject.h
         src/gfx/vk/types/Vertex.h
@@ -73,14 +75,19 @@ add_executable(VKTest
         src/objects/Model.h
         src/objects/Triangle.h
         src/objects/Triangle.cpp
-        src/objects/prefabs/Plane.cpp
-        src/objects/prefabs/Plane.h
         src/objects/Mesh.cpp
         src/objects/Mesh.h
         src/objects/BasicMaterial.cpp
         src/objects/BasicMaterial.h
         src/objects/Node.cpp
         src/objects/Node.h
+
+        src/objects/prefabs/Cube.cpp
+        src/objects/prefabs/Cube.h
+        src/objects/prefabs/Plane.cpp
+        src/objects/prefabs/Plane.h
+        src/objects/prefabs/SkyboxMesh.cpp
+        src/objects/prefabs/SkyboxMesh.h
 #        src/objects/gltf/Primitive.cpp
 #        src/objects/gltf/Primitive.h
 #        src/objects/gltf/Accessor.cpp
@@ -89,8 +96,7 @@ add_executable(VKTest
 #        src/objects/gltf/Attribute.h
 #        src/objects/loaders/GLTFLoader.cpp
 #        src/objects/loaders/GLTFLoader.h
-        src/objects/prefabs/Cube.cpp
-        src/objects/prefabs/Cube.h
+
         src/objects/loaders/GLTF.h
         src/objects/gltf/Attribute.h
 

@@ -12,6 +12,7 @@
 #include "objects/prefabs/Cube.h"
 #include "pipeline/Pipeline.h"
 
+class SkyboxMesh;
 class PipelineManager;
 class TextureManager;
 class MaterialManager;
@@ -57,7 +58,7 @@ class VK {
     std::unique_ptr<MaterialManager> m_materialManager;
 
     std::vector<Model> m_models;
-    std::unique_ptr<Cube> m_skybox;
+    std::unique_ptr<SkyboxMesh> m_skybox;
 
     std::unique_ptr<Camera> m_camera;
     // VkDescriptorSetLayout m_textureDescriptorSetLayout = VK_NULL_HANDLE;

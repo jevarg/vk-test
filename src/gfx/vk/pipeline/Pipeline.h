@@ -7,30 +7,23 @@
 class Pipeline {
    public:
     enum Type {
-        Graphics = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        Invalid = 0,
+        Simple,
+        Skybox,
     };
 
     virtual ~Pipeline() = default;
 
     Pipeline(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
-    // virtual ~Pipeline() = default;
-    // explicit Pipeline(const char* vertexShaderPath, const char* fragmentShaderPath,
-    //                   const VkPipelineVertexInputStateCreateInfo& vertexInputState,
-    //                   const VkPipelineInputAssemblyStateCreateInfo& inputAssembly,
-    //                   const VkPipelineViewportStateCreateInfo& viewportState,
-    //                   const VkPipelineRasterizationStateCreateInfo& rasterizer,
-    //                   const VkPipelineMultisampleStateCreateInfo& multisample,
-    //                   const VkPipelineColorBlendStateCreateInfo& colorBlendState,
-    //                   const VkPipelineDepthStencilStateCreateInfo& depthStencilState, const VkPipelineLayout& layout,
-    //                   const VkRenderPass& renderPass);
+
+    [[nodiscard]]
+    Type getType() const;
 
     [[nodiscard]]
     const VkPipeline& getUnderlying() const;
 
     [[nodiscard]]
     const VkPipelineLayout& getLayout() const;
-
-    // void bind(const VkCommandBuffer& commandBuffer) const;
 
     [[nodiscard]]
     virtual VkPipelineVertexInputStateCreateInfo getVertexInputState() const;
@@ -53,12 +46,13 @@ class Pipeline {
     [[nodiscard]]
     virtual VkPipelineDepthStencilStateCreateInfo getDepthStencil() const;
 
-    [[nodiscard]]
     virtual void createLayout(const std::span<VkDescriptorSetLayout>& setLayouts);
 
     void destroy() const;
 
    protected:
+    Type m_type;
+
     VkPipelineLayout m_layout = VK_NULL_HANDLE;
     VkPipeline m_underlying = VK_NULL_HANDLE;
 

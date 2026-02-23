@@ -20,7 +20,9 @@
 #include "input/Mouse.h"
 #include "objects/prefabs/Cube.h"
 #include "objects/prefabs/Plane.h"
+#include "objects/prefabs/SkyboxMesh.h"
 #include "pipeline/SimplePipeline.h"
+#include "pipeline/SkyboxPipeline.h"
 #include "types/ModelConstants.h"
 #include "types/Vertex.h"
 #include "vkutil.h"
@@ -642,10 +644,6 @@ void VK::m_renderNode(VkCommandBuffer commandBuffer, const Node* node) const {
         normalMatrix,
     };
 
-    const auto& pipeline = m_pipelineManager->get<SimplePipeline>();
-    vkCmdPushConstants(commandBuffer, pipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
-                       &constants);
-
     const auto& materials = mesh->getMaterials();
     for (const auto& submesh : mesh->getSubmeshes()) {
         const auto material = m_materialManager->get(materials[submesh.materialIndex]);
@@ -654,6 +652,10 @@ void VK::m_renderNode(VkCommandBuffer commandBuffer, const Node* node) const {
             m_camera->getDescriptorSet(),
             texture->getDescriptorSet()
         };
+
+        const auto& pipeline = m_pipelineManager->get(material->getPipelineType());
+        vkCmdPushConstants(commandBuffer, pipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelConstants),
+                           &constants);
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getUnderlying());
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getLayout(), 0, descriptorSets.size(),
@@ -688,8 +690,8 @@ void VK::m_recordCommandBuffer(VkCommandBuffer commandBuffer, const uint32_t ima
     renderPassInfo.clearValueCount = clearValues.size();
     renderPassInfo.pClearValues = clearValues.data();
 
-vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    // m_renderModel(commandBuffer, *m_skybox);
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    m_renderModel(commandBuffer, *m_skybox);
 
     for (const auto& model : m_models) {
         m_renderModel(commandBuffer, model);
@@ -719,7 +721,7 @@ void VK::m_initVulkan() {
 
     m_pipelineManager = std::make_unique<PipelineManager>();
     m_textureManager = std::make_unique<TextureManager>();
-    m_materialManager = std::make_unique<MaterialManager>(*m_textureManager, *m_pipelineManager, 100);
+    m_materialManager = std::make_unique<MaterialManager>(*m_textureManager, *m_pipelineManager, 128);
 
     const float aspectRatio =
         static_cast<float>(m_swapChainExtent.width) / static_cast<float>(m_swapChainExtent.height);
@@ -728,36 +730,42 @@ void VK::m_initVulkan() {
 
     std::array layouts{ m_camera->getDescriptorSetLayout(), m_materialManager->getDescriptorSetLayout() };
     m_pipelineManager->create<SimplePipeline>(m_swapChainExtent, layouts, m_renderPass);
+    m_pipelineManager->create<SkyboxPipeline>(m_swapChainExtent, layouts, m_renderPass);
 
     auto crateExplosivesMaterial = m_materialManager->load({
         .name = "crate-explosives",
-        .baseColorTexture = "./assets/crate-explosives.png"
+        .baseColorTexture = "./assets/crate-explosives.png",
+        .pipelineType = Pipeline::Simple,
     });
 
     auto crateEmptyMaterial = m_materialManager->load({
         .name = "crate-empty",
-        .baseColorTexture = "./assets/crate-empty.png"
+        .baseColorTexture = "./assets/crate-empty.png",
+        .pipelineType = Pipeline::Simple,
     });
 
     auto crateLogoMaterial = m_materialManager->load({
         .name = "crate-logo",
-        .baseColorTexture = "./assets/crate-logo.png"
+        .baseColorTexture = "./assets/crate-logo.png",
+        .pipelineType = Pipeline::Simple,
     });
 
-    // auto skyboxTextureHandle = m_textureManager->loadCubeMap(
-    //     {
-    //         "./assets/skybox/hl1/right.bmp",
-    //         "./assets/skybox/hl1/left.bmp",
-    //         "./assets/skybox/hl1/top.bmp",
-    //         "./assets/skybox/hl1/bottom.bmp",
-    //         "./assets/skybox/hl1/back.bmp",
-    //         "./assets/skybox/hl1/front.bmp",
-    //     },
-    //     TODO, TODO);
+    std::array<std::string, 6> skyboxTextures{
+        "./assets/skybox/hl1/right.bmp",
+        "./assets/skybox/hl1/left.bmp",
+        "./assets/skybox/hl1/top.bmp",
+        "./assets/skybox/hl1/bottom.bmp",
+        "./assets/skybox/hl1/back.bmp",
+        "./assets/skybox/hl1/front.bmp",
+    };
 
-    // auto skyboxMaterial = m_materialManager->load("skybox", m_pipelines.skybox.get(), skyboxTextureHandle);
+    auto skyboxMaterial = m_materialManager->loadCubemap({
+        .name = "skybox",
+        .textures = skyboxTextures,
+        .pipelineType = Pipeline::Skybox,
+    });
 
-    // m_skybox = std::make_unique<Cube>(std::vector{ skyboxMaterial });
+    m_skybox = std::make_unique<SkyboxMesh>(skyboxMaterial);
     m_models.emplace_back(Cube({
         .left = crateExplosivesMaterial,
         .right = crateExplosivesMaterial,

@@ -141,6 +141,10 @@ Pipeline::Pipeline(const std::string& vertexShaderPath, const std::string& fragm
     // pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
 }
 
+Pipeline::Type Pipeline::getType() const {
+    return m_type;
+}
+
 VkPipelineVertexInputStateCreateInfo Pipeline::getVertexInputState() const {
     const auto bindingDescription = Vertex::getBindingDescription();
     const auto attributeDescriptions = Vertex::getAttributeDescriptions();

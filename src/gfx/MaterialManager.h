@@ -16,6 +16,13 @@ class Texture;
 struct MaterialData{
     std::string name{"Unnamed material"};
     std::string baseColorTexture;
+    Pipeline::Type pipelineType;
+};
+
+struct CubemapData {
+    std::string name{"Unnamed cubemap"};
+    std::span<std::string, 6> textures;
+    Pipeline::Type pipelineType;
 };
 
 class MaterialManager {
@@ -23,6 +30,7 @@ public:
     explicit MaterialManager(TextureManager& textureManager, PipelineManager& pipelineManager, uint32_t maxSize);
 
     Handle<BasicMaterial> load(const MaterialData& data);
+    Handle<BasicMaterial> loadCubemap(const CubemapData& data);
 
     [[nodiscard]]
     std::shared_ptr<BasicMaterial> get(const Handle<BasicMaterial>& handle);
